@@ -142,8 +142,9 @@ send the password to the API themselves. Locally nothing is locked, because
    - `DATABASE_URL`: the Neon connection string
    - `STAGING_PASSWORD`: the password from step 1
 
-   The first deploy builds the container, runs the migrations
-   (`alembic upgrade head`), then starts. Note its address, e.g.
+   The first deploy builds the container, which runs the migrations
+   (`alembic upgrade head`) as it starts, then serves. (Render's free plan
+   has no pre-deploy step, so the container does it.) Note its address, e.g.
    `https://aqarly-api-stg.onrender.com`.
 
 5. **Load the demo data** into staging, from your laptop (the frontend repo
@@ -180,8 +181,8 @@ A custom domain (`dev.aqarlystg.…`) can be added per service later under
 
 Merge into `staging` and push. Render rebuilds only what changed: the API on
 any push to this repo; a frontend when its app or the shared packages change.
-Watch progress and logs in the Render dashboard. If an API migration fails,
-the previous version keeps running.
+Watch progress and logs in the Render dashboard. The API applies its
+migrations as it starts; if one fails, the previous version keeps running.
 
 ### Trying it locally, the way staging runs
 

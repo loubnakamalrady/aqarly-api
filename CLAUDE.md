@@ -153,8 +153,8 @@ autogenerate won't see its table.
 
 Render (free) runs this API from the `Dockerfile` and the five frontends,
 Neon (free) runs Postgres; `render.yaml` in each repo describes the services
-and a push to the `staging` branch deploys. The API runs `alembic upgrade
-head` as Render's pre-deploy step. README → "Staging" has the setup steps.
+and a push to the `staging` branch deploys. The API container runs `alembic
+upgrade head` as it starts (the free plan has no pre-deploy step). README → "Staging" has the setup steps.
 
 `app/staging_lock.py` puts HTTP Basic auth in front of everything except
 `/health` when `STAGING_PASSWORD` is set; the frontends lock themselves the

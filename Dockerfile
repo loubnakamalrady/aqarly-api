@@ -21,9 +21,11 @@ RUN uv sync --frozen --no-dev --no-install-project
 COPY . .
 RUN uv sync --frozen --no-dev
 
-# The virtualenv's tools (uvicorn, alembic) on the PATH, so the host's
-# pre-deploy command can be plain `alembic upgrade head`.
+# The virtualenv's tools (uvicorn, alembic) on the PATH.
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Production mode: no --reload. Hosts say which port to use in $PORT.
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]
+# Bring the database up to date, then serve. Migrating at start means every
+# deploy applies its own migrations (Render's free plan has no pre-deploy
+# step); if one fails, the new version never starts and the old one keeps
+# serving. Production mode: no --reload. Hosts say which port in $PORT.
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]
