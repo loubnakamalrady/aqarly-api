@@ -5,5 +5,22 @@ against the database, and a model it never imported is a table it never sees.
 """
 
 from app.models.base import Base
+from app.models.housekeeping_rate import HousekeepingRate
+from app.models.listing import Listing
+from app.models.people import Staff, Tenant
+from app.models.property import Property, Unit
+from app.models.service_request import CompletionPhoto, Photo, ServiceRequest, StageEntry
 
-__all__ = ["Base"]
+__all__ = [
+    "Base",
+    "CompletionPhoto",
+    "HousekeepingRate",
+    "Listing",
+    "Photo",
+    "Property",
+    "ServiceRequest",
+    "StageEntry",
+    "Staff",
+    "Tenant",
+    "Unit",
+]

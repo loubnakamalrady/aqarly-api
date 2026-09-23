@@ -64,7 +64,16 @@ uv run alembic upgrade head
 ```
 
 Always read the generated file in `alembic/versions/` before applying it.
-Autogenerate misses some changes (renames, for example).
+Autogenerate misses some changes: renames, and **any CHECK constraint added
+to or removed from a model**. Write those into the migration yourself
+(`op.create_check_constraint` / `op.drop_constraint`);
+`test_migrations_have_the_models_check_constraints` fails if you forget.
+
+## Tests
+
+`uv run pytest` never touches your dev data. It drops and recreates a
+separate `aqarly_test` database, builds it by running the migrations, and
+rolls back each test's changes when the test ends (see `tests/conftest.py`).
 
 ## Layout
 

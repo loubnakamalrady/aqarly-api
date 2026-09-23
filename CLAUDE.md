@@ -66,6 +66,44 @@ tests/
 Every model module must be imported in `app/models/__init__.py`, or Alembic
 autogenerate won't see its table.
 
+## Schema
+
+- **String ids from the seed** (`prop-marina-heights`, `REQ-1058`) are the
+  primary keys, so the frontend's URLs keep working.
+- **Vocabularies** (`Stage`, `RequestType`, …) are `Literal`s in
+  `app/models/enums.py`, stored as VARCHAR + a named CHECK (not native Postgres
+  enums). Pydantic schemas reuse the same `Literal`s, so the generated
+  TypeScript unions match `types.ts`.
+- **`stage` and `created_at` are not columns.** They're `column_property`
+  subqueries over `stage_history`: the furthest stage reached (by rank, not
+  by time) and the `submitted` entry's time. Read-only; after changing the
+  history, flush and expire the request before reading them. Every write that
+  creates a request must add its `submitted` entry.
+- Columns are snake_case (`unit_id`); `types.ts` is camelCase (`unitId`). The
+  response schemas map one to the other with aliases, so the JSON matches
+  `types.ts`. Nested shapes (`schedule`, `handBack`, `location`) are flattened
+  into prefixed columns and rebuilt in the schemas.
+- Frontend rules are CHECK constraints on `service_requests` (housekeeping is
+  never urgent, maintenance is never charged, schedule date and slot together,
+  maintenance categories fixed).
+- **Autogenerate does not see CHECK constraint changes.** Add or drop them by
+  hand in the migration; `test_migrations_have_the_models_check_constraints`
+  catches a forgotten one.
+- Money is `Numeric(12, 2)` (Python `Decimal`). Declare it as a number in
+  response schemas, because Pydantic serializes `Decimal` as a JSON string by
+  default.
+- `listings` holds the marketing site's `Listing`s; `properties` holds the
+  buildings operations manages. The frontend's `getProperties()` returns
+  listings, so its API route should be `/listings`, not `/properties`.
+- `service_requests.assignee_id` is a plain (RESTRICT) foreign key, so staff
+  with closed work can't be deleted yet, although the frontend allows that.
+  Decide in Phase 7 (soft-remove staff, or null the assignee).
+
+## Tests
+
+`tests/conftest.py` recreates `<db>_test` from the migrations on every run,
+and the `session` fixture rolls each test back. Tests never touch dev data.
+
 ## Commands
 
 ```bash
@@ -80,15 +118,13 @@ Use `uv add` / `uv add --dev` for dependencies. Never `pip install`.
 
 ## Roadmap
 
-Done: Phase 0 (tooling) and Phase 1 (an empty API with `/health`, Alembic
-wired, no tables).
+Done: Phase 0 (tooling), Phase 1 (an empty API with `/health`, Alembic
+wired) and Phase 2 (tables for every `types.ts` entity plus `listings`; first
+migration applied).
 
-2. Tables from `types.ts`: properties, units, tenants, staff,
-   housekeeping_rates, service_requests, plus child tables stage_history,
-   photos, completion_photos.
 3. `scripts/seed.py`: wipe and reload from the frontend's seed JSON. This
    replaces the "Reset demo data" button.
-4. First reads: `/properties`, `/properties/{slug}`,
+4. First reads: listings (`/listings`, `/listings/{slug}`),
    `/technicians/{id}/worklist` (started first, then emergency, then oldest),
    `/jobs/{id}`, with a test for each.
 5. Connect the frontend: export `openapi.json`, generate types, and switch
