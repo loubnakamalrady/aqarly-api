@@ -99,6 +99,16 @@ autogenerate won't see its table.
   with closed work can't be deleted yet, although the frontend allows that.
   Decide in Phase 7 (soft-remove staff, or null the assignee).
 
+## Seed
+
+`app/seed.py` (run by `scripts/seed.py`) replaces the frontend's "Reset demo
+data": TRUNCATE every table, then load `FRONTEND_DATA_DIR`'s JSON, in one
+transaction. The JSON is validated by Pydantic models of the frontend's
+camelCase shape with `extra="forbid"`, so a field the frontend adds stops the
+seed until it's mapped here. After loading it compares the computed
+`stage`/`created_at` against the JSON's stored ones and refuses on any
+difference. When a model gains a column, map it in `app/seed.py` too.
+
 ## Tests
 
 `tests/conftest.py` recreates `<db>_test` from the migrations on every run,
@@ -110,6 +120,7 @@ and the `session` fixture rolls each test back. Tests never touch dev data.
 docker compose up -d --wait                  # start Postgres
 uv run uvicorn app.main:app --reload         # API on :8000, docs at /docs
 uv run pytest                                # tests (need Postgres up)
+uv run python scripts/seed.py                # wipe + reload the frontend's seed JSON
 uv run alembic revision --autogenerate -m "…"  # after changing models
 uv run alembic upgrade head                  # apply migrations
 ```
@@ -119,11 +130,9 @@ Use `uv add` / `uv add --dev` for dependencies. Never `pip install`.
 ## Roadmap
 
 Done: Phase 0 (tooling), Phase 1 (an empty API with `/health`, Alembic
-wired) and Phase 2 (tables for every `types.ts` entity plus `listings`; first
-migration applied).
+wired), Phase 2 (tables for every `types.ts` entity plus `listings`; first
+migration applied) and Phase 3 (`scripts/seed.py`).
 
-3. `scripts/seed.py`: wipe and reload from the frontend's seed JSON. This
-   replaces the "Reset demo data" button.
 4. First reads: listings (`/listings`, `/listings/{slug}`),
    `/technicians/{id}/worklist` (started first, then emergency, then oldest),
    `/jobs/{id}`, with a test for each.

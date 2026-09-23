@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     # e.g. postgresql+psycopg://aqarly:aqarly@localhost:5432/aqarly
     database_url: str
 
+    # Where scripts/seed.py reads operations.json and properties.json: the
+    # frontend repo's seed data, which it only ever reads.
+    frontend_data_dir: Path = ROOT.parent / "aqarly" / "packages" / "core" / "data"
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -32,6 +32,15 @@ Apply migrations (a no-op until Phase 2 adds tables):
 uv run alembic upgrade head
 ```
 
+Load the demo data: wipes every table and reloads the frontend's seed JSON
+(`../aqarly/packages/core/data`, or `FRONTEND_DATA_DIR` in `.env`). Run it
+again any time to get back to a known state. It's all or nothing: bad data
+is refused and the database is left as it was.
+
+```bash
+uv run python scripts/seed.py
+```
+
 Run the API, reloading on code changes:
 
 ```bash
