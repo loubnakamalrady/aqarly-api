@@ -60,6 +60,19 @@ Endpoints so far:
 | `GET /listings/{slug}` | `getPropertyBySlug()` |
 | `GET /technicians/{id}/worklist` | `getWorklist()` |
 | `GET /technicians/{id}/jobs/{jobId}` | `getJob()` |
+| `POST /technicians/{id}/jobs/{jobId}/start` | `startRequest()` |
+| `POST /technicians/{id}/jobs/{jobId}/complete` | `completeRequest()` |
+| `POST /technicians/{id}/jobs/{jobId}/hand-back` | `handBackRequest()` |
+
+After changing any route or schema, re-export the OpenAPI schema. The
+frontend generates its TypeScript types from this file, and
+`tests/test_openapi.py` fails until it's current:
+
+```bash
+uv run python scripts/export_openapi.py
+```
+
+Then, in the frontend repo: `pnpm --filter @aqarly/core generate:api`.
 
 Run the tests (the database must be running):
 

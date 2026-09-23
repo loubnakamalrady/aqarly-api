@@ -17,7 +17,15 @@ operations.json`, `properties.json`) into an in-memory store. Each app is its
 own process with its own copy, so they never agree: a job assigned in ops
 never reaches the field app. This API is the one shared store that fixes that.
 
-Read the frontend for context; never modify it from this repo.
+Read the frontend for context. Change it only when a phase calls for it and
+the user has said go. Its own CLAUDE.md rules apply there (pnpm only, strict
+TypeScript, no hard-coded hex, a disabled control with its reason rather than
+one that pretends).
+
+The frontend calls this API through `packages/core/src/api.ts`, with types
+generated from `openapi.json` here. **After changing any route or schema, run
+`uv run python scripts/export_openapi.py`** (`tests/test_openapi.py` fails
+until you do), then `pnpm --filter @aqarly/core generate:api` in the frontend.
 
 The data model is `packages/core/src/types.ts` there: Property, Unit, Tenant,
 Staff, HousekeepingRate, ServiceRequest, and a request's StageEntry, Photo,
@@ -105,9 +113,13 @@ autogenerate won't see its table.
   camelCase JSON and OpenAPI, `from_attributes` on. Shapes that `types.ts`
   nests but the tables flatten (`schedule`, `handBack`, `location`) are rebuilt
   in a `from_model` classmethod. Money is `Money` (float on the wire).
-- **Services** (`app/services`) hold the reads that derive things, and raise
-  `NotFound` / `Forbidden` from `services/errors.py`. `app/main.py` maps them
-  to 404 / 403 with `{"detail": message}`. Every refusal is declared in the
+- **Services** (`app/services`) hold derived reads and guarded writes, and
+  raise `NotFound` / `Forbidden` / `Conflict` / `Invalid` from
+  `services/errors.py`. `app/main.py` maps them to 404 / 403 / 409 / 400 with
+  `{"detail": message}`. Messages are shown to people as written, so they
+  match the frontend's wording. Writes don't commit: the router commits, then
+  `expire_all()` and re-reads, because `stage` is computed from the history the
+  write just changed. Every refusal is declared in the
   route's `responses=` with `ErrorOut`, so it appears in the OpenAPI schema.
 - A service that depends on the current time takes `now` as a parameter (the
   router passes `datetime.now(UTC)`), so tests can fix it.
@@ -156,16 +168,18 @@ Use `uv add` / `uv add --dev` for dependencies. Never `pip install`.
 
 Done: Phase 0 (tooling), Phase 1 (an empty API with `/health`, Alembic
 wired), Phase 2 (tables for every `types.ts` entity plus `listings`; first
-migration applied), Phase 3 (`scripts/seed.py`) and Phase 4 (`/listings`,
+migration applied), Phase 3 (`scripts/seed.py`), Phase 4 (`/listings`,
 `/listings/{slug}`, `/technicians/{id}/worklist`,
-`/technicians/{id}/jobs/{jobId}`).
+`/technicians/{id}/jobs/{jobId}`) and Phase 5 (the marketing site's listings
+and the whole field app run on this API, including its three writes, pulled
+forward from Phase 7 so no field screen read one store and wrote another).
 
-5. Connect the frontend: export `openapi.json`, generate types, and switch
-   `getProperties`, `getWorklist` and `getJob` to `fetch`.
 6. Remaining reads by area (ops, housekeeping, tenant); derived state moves
    into `services/`. Display helpers (`formatDate`, `formatCharge`,
    `stageSteps`, `tierFor`) stay in TypeScript.
-7. Writes, with a test for every guard.
+7. The remaining writes (ops, housekeeping, staff and rates), with a test for
+   every guard. Once ops is here, an ops assignment reaches the field app and a
+   hand-back reaches ops.
 8. Photos to object storage (MinIO locally, R2/S3 deployed).
 9. Auth: roles ops admin, housekeeping admin, technician, tenant.
 10. Delete the frontend store, deploy, and add CI.
