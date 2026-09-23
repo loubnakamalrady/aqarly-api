@@ -5,24 +5,23 @@ operations.ts. Everything here is derived when read: the order of the
 worklist, its counts, and the repeat-fault flag. Nothing is stored.
 """
 
-from collections import Counter
 from collections.abc import Sequence
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.models import CompletionPhoto, ServiceRequest, StageEntry, Staff, Unit
+from app.models import CompletionPhoto, ServiceRequest, Staff
 from app.models.enums import Stage
 from app.schemas.field import JobOut, PhotoIn, RepeatFaultOut, WorklistCounts, WorklistOut
 from app.schemas.operations import StaffOut
+from app.services.common import (
+    REPEAT_FAULT_WITHIN,
+    load_requests,
+    reach_stage,
+    repeat_fault,
+)
 from app.services.errors import Conflict, Forbidden, Invalid, NotFound
-
-# A unit that has failed the same way this many times within this window is
-# flagged: the repair that keeps not holding is a different job from the one
-# on the ticket. The same rule the ops portal flags a unit with.
-REPEAT_FAULT_WITHIN = timedelta(days=240)
-REPEAT_FAULT_OCCURRENCES = 3
 
 # Work already started outranks work that hasn't been: a technician standing
 # in the unit finishes what they're holding.
@@ -34,7 +33,7 @@ def get_worklist(session: Session, technician_id: str, now: datetime) -> Worklis
     if technician is None:
         raise NotFound(f"No technician {technician_id}")
 
-    mine = _requests(session, ServiceRequest.assignee_id == technician_id)
+    mine = load_requests(session, ServiceRequest.assignee_id == technician_id)
     faults = _repeat_faults(session, mine, now)
     jobs = [JobOut.from_model(r, repeat_fault=faults.get(r.id)) for r in mine]
 
@@ -59,7 +58,7 @@ def get_job(session: Session, job_id: str, technician_id: str, now: datetime) ->
     under someone stops resolving for them. Closed jobs stay readable."""
     if session.get(Staff, technician_id) is None:
         raise NotFound(f"No technician {technician_id}")
-    found = _requests(session, ServiceRequest.id == job_id)
+    found = load_requests(session, ServiceRequest.id == job_id)
     if not found:
         raise NotFound(f"No job {job_id}")
     request = found[0]
@@ -68,23 +67,6 @@ def get_job(session: Session, job_id: str, technician_id: str, now: datetime) ->
 
     faults = _repeat_faults(session, [request], now)
     return JobOut.from_model(request, repeat_fault=faults.get(request.id))
-
-
-def _requests(session: Session, *where) -> Sequence[ServiceRequest]:
-    """Requests with everything a job shows, loaded up front: one query per
-    relationship rather than one per request."""
-    return session.scalars(
-        select(ServiceRequest)
-        .where(*where)
-        .options(
-            selectinload(ServiceRequest.stage_history),
-            selectinload(ServiceRequest.photos),
-            selectinload(ServiceRequest.completion_photos),
-            selectinload(ServiceRequest.unit).selectinload(Unit.property),
-            selectinload(ServiceRequest.tenant),
-            selectinload(ServiceRequest.assignee),
-        )
-    ).all()
 
 
 def _work_order(job: JobOut) -> tuple:
@@ -121,7 +103,7 @@ def _repeat_faults(
         .order_by(ServiceRequest.created_at, ServiceRequest.id)
     ).all()
 
-    by_unit = {unit_id: _repeat_fault([h for h in history if h.unit_id == unit_id], now) for unit_id in unit_ids}
+    by_unit = {unit_id: repeat_fault([h for h in history if h.unit_id == unit_id], now) for unit_id in unit_ids}
     return {
         r.id: fault
         for r in requests
@@ -129,25 +111,6 @@ def _repeat_faults(
         and (fault := by_unit[r.unit_id]) is not None
         and fault.category == r.category
     }
-
-
-def _repeat_fault(history: Sequence, now: datetime) -> RepeatFaultOut | None:
-    """The unit's most frequent category within the window, if it has come up
-    often enough. `spend` counts that category's charged work over all time."""
-    cutoff = now - REPEAT_FAULT_WITHIN
-    counts = Counter(h.category for h in history if h.created_at >= cutoff)
-    if not counts:
-        return None
-
-    # most_common keeps first-seen order among ties; history is oldest first.
-    category, count = counts.most_common(1)[0]
-    if count < REPEAT_FAULT_OCCURRENCES:
-        return None
-
-    spend = sum(
-        h.charge for h in history if h.category == category and h.stage == "done" and h.charge
-    )
-    return RepeatFaultOut(category=category, count=count, spend=float(spend))
 
 
 # --- Writes ------------------------------------------------------------------
@@ -165,7 +128,7 @@ def start_job(session: Session, job_id: str, technician_id: str, now: datetime) 
     technician confirming where they are, not a second event."""
     request = _held_by(session, job_id, technician_id)
     if request.stage != "in-progress":
-        _reach_stage(request, "in-progress", now)
+        reach_stage(request, "in-progress", now)
 
 
 def complete_job(
@@ -194,7 +157,7 @@ def complete_job(
         for i, p in enumerate(evidence[:MAX_COMPLETION_PHOTOS])
     ]
     request.completion_notes = (notes or "").strip() or None
-    _reach_stage(request, "done", now)
+    reach_stage(request, "done", now)
 
 
 def hand_back_job(
@@ -236,13 +199,3 @@ def _held_by(session: Session, job_id: str, technician_id: str) -> ServiceReques
     if request.stage == "done":
         raise Conflict("That job is already closed")
     return request
-
-
-def _reach_stage(request: ServiceRequest, stage: Stage, at: datetime) -> None:
-    """A stage is reached once: reaching it again moves its time rather than
-    adding a second entry."""
-    existing = next((e for e in request.stage_history if e.stage == stage), None)
-    if existing:
-        existing.at = at
-    else:
-        request.stage_history.append(StageEntry(stage=stage, at=at))

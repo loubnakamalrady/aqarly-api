@@ -37,6 +37,9 @@ class StaffOut(CamelModel):
     phone: str
     role: RequestType
     photo: str | None
+    # Set once they've left the roster. Retired staff still appear as the
+    # assignee of work they closed.
+    retired_at: datetime | None
 
 
 class StageEntryOut(CamelModel):

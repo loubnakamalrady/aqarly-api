@@ -198,7 +198,11 @@ def seed(session: Session, data_dir: Path) -> dict[str, int]:
     session.add_all(Property(**p.model_dump()) for p in operations.properties)
     session.add_all(Tenant(**t.model_dump()) for t in operations.tenants)
     session.add_all(Staff(**s.model_dump()) for s in operations.staff)
-    session.add_all(HousekeepingRate(**r.model_dump()) for r in operations.housekeeping_rates)
+    # The card's order is the order the file lists it in.
+    session.add_all(
+        HousekeepingRate(**r.model_dump(), position=i)
+        for i, r in enumerate(operations.housekeeping_rates)
+    )
     session.add_all(_listing(item) for item in listings)
     session.flush()
     session.add_all(Unit(**u.model_dump()) for u in operations.units)

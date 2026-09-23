@@ -103,9 +103,15 @@ autogenerate won't see its table.
 - `listings` holds the marketing site's `Listing`s; `properties` holds the
   buildings operations manages. The frontend's `getProperties()` returns
   listings, so its API route should be `/listings`, not `/properties`.
-- `service_requests.assignee_id` is a plain (RESTRICT) foreign key, so staff
-  with closed work can't be deleted yet, although the frontend allows that.
-  Decide in Phase 7 (soft-remove staff, or null the assignee).
+- **Staff and rates are retired, never deleted** (`retired_at`), a decision
+  the user made. The guards still refuse while open work or open bookings
+  exist. Retired rows leave rosters, assign panels and the rate card, but keep
+  naming the work and bookings made with them. Deleting a request is real.
+- The rate card's order is data: `housekeeping_rates.position`, where the
+  admin listed it; a new rate goes last.
+- Ties with no meaningful order are broken deterministically: buildings by
+  name, requests by `created_at` then id. The frontend's old tie order was the
+  seed file's array order, which the database doesn't have.
 
 ## Endpoints
 
@@ -113,13 +119,20 @@ autogenerate won't see its table.
   camelCase JSON and OpenAPI, `from_attributes` on. Shapes that `types.ts`
   nests but the tables flatten (`schedule`, `handBack`, `location`) are rebuilt
   in a `from_model` classmethod. Money is `Money` (float on the wire).
-- **Services** (`app/services`) hold derived reads and guarded writes, and
+- **Services**: `portfolio.py` (the portals' reads), `admin.py` (their
+  writes), `field.py` (the technician app), `common.py` (the request loader,
+  `charged`, report periods, the repeat-fault rule, `reach_stage`). They hold
+  derived reads and guarded writes, and
   raise `NotFound` / `Forbidden` / `Conflict` / `Invalid` from
   `services/errors.py`. `app/main.py` maps them to 404 / 403 / 409 / 400 with
   `{"detail": message}`. Messages are shown to people as written, so they
   match the frontend's wording. Writes don't commit: the router commits, then
   `expire_all()` and re-reads, because `stage` is computed from the history the
-  write just changed. Every refusal is declared in the
+  write just changed. `get_session` rolls back a failed request explicitly,
+  so a write refused halfway (a request raised with an unknown assignee)
+  leaves nothing behind.
+- Request ids are "REQ-" and the next number, taken under a Postgres advisory
+  lock so two portals raising at once can't collide. Every refusal is declared in the
   route's `responses=` with `ErrorOut`, so it appears in the OpenAPI schema.
 - A service that depends on the current time takes `now` as a parameter (the
   router passes `datetime.now(UTC)`), so tests can fix it.
@@ -170,16 +183,12 @@ Done: Phase 0 (tooling), Phase 1 (an empty API with `/health`, Alembic
 wired), Phase 2 (tables for every `types.ts` entity plus `listings`; first
 migration applied), Phase 3 (`scripts/seed.py`), Phase 4 (`/listings`,
 `/listings/{slug}`, `/technicians/{id}/worklist`,
-`/technicians/{id}/jobs/{jobId}`) and Phase 5 (the marketing site's listings
-and the whole field app run on this API, including its three writes, pulled
-forward from Phase 7 so no field screen read one store and wrote another).
+`/technicians/{id}/jobs/{jobId}`), Phase 5 (the marketing site and the
+field app on this API) and Phases 6–7 (every ops, housekeeping and tenant read
+and write; the frontend's `store.ts` is deleted and all five apps share this
+database). Each was checked against the frontend's own functions: the final
+old-versus-new core comparison matched 906 reads and all 18 refusal messages.
 
-6. Remaining reads by area (ops, housekeeping, tenant); derived state moves
-   into `services/`. Display helpers (`formatDate`, `formatCharge`,
-   `stageSteps`, `tierFor`) stay in TypeScript.
-7. The remaining writes (ops, housekeeping, staff and rates), with a test for
-   every guard. Once ops is here, an ops assignment reaches the field app and a
-   hand-back reaches ops.
 8. Photos to object storage (MinIO locally, R2/S3 deployed).
 9. Auth: roles ops admin, housekeeping admin, technician, tenant.
-10. Delete the frontend store, deploy, and add CI.
+10. Deploy (Neon, Railway/Render/Fly), and add CI: tests and the `openapi.json` export on every push.

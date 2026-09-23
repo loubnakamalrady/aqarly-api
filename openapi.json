@@ -597,10 +597,1760 @@
           }
         }
       }
+    },
+    "/requests": {
+      "get": {
+        "tags": [
+          "requests"
+        ],
+        "summary": "List Requests",
+        "description": "The queue: `getRequests`. Filters narrow together; oldest first unless\n`sort=newest`.",
+        "operationId": "list_requests_requests_get",
+        "parameters": [
+          {
+            "name": "stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "submitted",
+                    "assigned",
+                    "in-progress",
+                    "done"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Stage"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "maintenance",
+                    "housekeeping"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "name": "priority",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "urgent",
+                    "normal"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Priority"
+            }
+          },
+          {
+            "name": "tier",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "emergency",
+                    "standard"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tier"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Propertyid"
+            }
+          },
+          {
+            "name": "unitId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Unitid"
+            }
+          },
+          {
+            "name": "assigneeId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A staff id, or \"unassigned\".",
+              "title": "Assigneeid"
+            },
+            "description": "A staff id, or \"unassigned\"."
+          },
+          {
+            "name": "tenantId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tenantid"
+            }
+          },
+          {
+            "name": "open",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Open"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "age",
+                "newest"
+              ],
+              "type": "string",
+              "default": "age",
+              "title": "Sort"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EnrichedRequestOut"
+                  },
+                  "title": "Response List Requests Requests Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "requests"
+        ],
+        "summary": "Create Request",
+        "description": "Raise a request, from ops, the housekeeping portal or a tenant:\n`createRequest`.",
+        "operationId": "create_request_requests_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewRequestIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrichedRequestOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests/{request_id}": {
+      "get": {
+        "tags": [
+          "requests"
+        ],
+        "summary": "Get Request",
+        "description": "One request with what it points at: `getRequestById`.",
+        "operationId": "get_request_requests__request_id__get",
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrichedRequestOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests/{request_id}/candidates": {
+      "get": {
+        "tags": [
+          "requests"
+        ],
+        "summary": "Assignment Candidates",
+        "description": "Who could take this request, best first: `getAssignmentCandidates`.",
+        "operationId": "assignment_candidates_requests__request_id__candidates_get",
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CandidateOut"
+                  },
+                  "title": "Response Assignment Candidates Requests  Request Id  Candidates Get"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests/assign": {
+      "post": {
+        "tags": [
+          "requests"
+        ],
+        "summary": "Assign Requests",
+        "description": "Give requests to one staff member: `assignRequests`. Closed work is\nskipped.",
+        "operationId": "assign_requests_requests_assign_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ServiceRequestOut"
+                  },
+                  "type": "array",
+                  "title": "Response Assign Requests Requests Assign Post"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests/priority": {
+      "post": {
+        "tags": [
+          "requests"
+        ],
+        "summary": "Set Priority",
+        "description": "`setPriority`.",
+        "operationId": "set_priority_requests_priority_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PriorityIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ServiceRequestOut"
+                  },
+                  "type": "array",
+                  "title": "Response Set Priority Requests Priority Post"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests/delete": {
+      "post": {
+        "tags": [
+          "requests"
+        ],
+        "summary": "Delete Requests",
+        "description": "Remove requests entirely: `deleteRequests`. Returns them as they were.",
+        "operationId": "delete_requests_requests_delete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestIdsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ServiceRequestOut"
+                  },
+                  "type": "array",
+                  "title": "Response Delete Requests Requests Delete Post"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/units": {
+      "get": {
+        "tags": [
+          "units"
+        ],
+        "summary": "List Units",
+        "description": "Units with one trade's counts and spend, busiest first: `getUnits`.",
+        "operationId": "list_units_units_get",
+        "parameters": [
+          {
+            "name": "propertyId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Propertyid"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "maintenance",
+                "housekeeping"
+              ],
+              "type": "string",
+              "default": "maintenance",
+              "title": "Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UnitRecordOut"
+                  },
+                  "title": "Response List Units Units Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/units/{unit_id}": {
+      "get": {
+        "tags": [
+          "units"
+        ],
+        "summary": "Get Unit",
+        "description": "One unit: `getUnitById`.",
+        "operationId": "get_unit_units__unit_id__get",
+        "parameters": [
+          {
+            "name": "unit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Unit Id"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "maintenance",
+                "housekeeping"
+              ],
+              "type": "string",
+              "default": "maintenance",
+              "title": "Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnitRecordOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/properties": {
+      "get": {
+        "tags": [
+          "buildings"
+        ],
+        "summary": "List Properties",
+        "description": "The buildings operations manages, by name: operations.ts's\n`getProperties`. (Marketing listings are `/listings`.)",
+        "operationId": "list_properties_properties_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PropertyOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Properties Properties Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reports/properties": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Property Rollups",
+        "description": "Cost and volume by building, most spend first: `getPropertyRollups`.",
+        "operationId": "property_rollups_reports_properties_get",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "month",
+                    "quarter",
+                    "year"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Period"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "maintenance",
+                "housekeeping"
+              ],
+              "type": "string",
+              "default": "maintenance",
+              "title": "Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PropertyRollupOut"
+                  },
+                  "title": "Response Property Rollups Reports Properties Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reports/categories": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Category Rollups",
+        "description": "Volume and spend by category, busiest first: `getCategoryRollups`,\nwithout labels.",
+        "operationId": "category_rollups_reports_categories_get",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "month",
+                    "quarter",
+                    "year"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Period"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "maintenance",
+                "housekeeping"
+              ],
+              "type": "string",
+              "default": "maintenance",
+              "title": "Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryRollupOut"
+                  },
+                  "title": "Response Category Rollups Reports Categories Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reports/dashboard": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Dashboard",
+        "description": "The dashboard's numbers: `getDashboardStats`.",
+        "operationId": "dashboard_reports_dashboard_get",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "month",
+                    "quarter",
+                    "year"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Period"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "maintenance",
+                "housekeeping"
+              ],
+              "type": "string",
+              "default": "maintenance",
+              "title": "Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/staff/roster": {
+      "get": {
+        "tags": [
+          "staff"
+        ],
+        "summary": "Roster",
+        "description": "One trade's current staff with the load they hold: `getStaffRoster`.",
+        "operationId": "roster_staff_roster_get",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "maintenance",
+                "housekeeping"
+              ],
+              "type": "string",
+              "default": "maintenance",
+              "title": "Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RosterMemberOut"
+                  },
+                  "title": "Response Roster Staff Roster Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/staff/{staff_id}": {
+      "get": {
+        "tags": [
+          "staff"
+        ],
+        "summary": "Get Staff",
+        "description": "One staff member, retired or not.",
+        "operationId": "get_staff_staff__staff_id__get",
+        "parameters": [
+          {
+            "name": "staff_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Staff Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "staff"
+        ],
+        "summary": "Update Staff",
+        "description": "`updateStaff`. Leaving `photo` out keeps the one they have.",
+        "operationId": "update_staff_staff__staff_id__put",
+        "parameters": [
+          {
+            "name": "staff_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Staff Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "staff"
+        ],
+        "summary": "Retire Staff",
+        "description": "`removeStaff`: takes them off the roster once they hold no open work.\nTheir closed work still names them.",
+        "operationId": "retire_staff_staff__staff_id__delete",
+        "parameters": [
+          {
+            "name": "staff_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Staff Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/staff": {
+      "post": {
+        "tags": [
+          "staff"
+        ],
+        "summary": "Add Staff",
+        "description": "`addStaff`.",
+        "operationId": "add_staff_staff_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/housekeeping-rates": {
+      "get": {
+        "tags": [
+          "rates"
+        ],
+        "summary": "List Rates",
+        "description": "The card, in its order: `getHousekeepingRates`. `includeRetired` adds\nthe services that have left it, so old bookings can still be named.",
+        "operationId": "list_rates_housekeeping_rates_get",
+        "parameters": [
+          {
+            "name": "includeRetired",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Includeretired"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RateOut"
+                  },
+                  "title": "Response List Rates Housekeeping Rates Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "rates"
+        ],
+        "summary": "Add Rate",
+        "description": "`addHousekeepingRate`: goes at the end of the card.",
+        "operationId": "add_rate_housekeeping_rates_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/housekeeping-rates/{service_type}": {
+      "delete": {
+        "tags": [
+          "rates"
+        ],
+        "summary": "Retire Rate",
+        "description": "`removeHousekeepingRate`: takes it off the card once no open booking\nuses it. Bookings already made keep its name and their price.",
+        "operationId": "retire_rate_housekeeping_rates__service_type__delete",
+        "parameters": [
+          {
+            "name": "service_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Service Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenant_id}": {
+      "get": {
+        "tags": [
+          "tenants"
+        ],
+        "summary": "Get Tenant",
+        "description": "A tenant with the unit they occupy: `getTenantById`. The tenant\nportal's notifications and history are built from `/requests?tenantId=`.",
+        "operationId": "get_tenant_tenants__tenant_id__get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantAccountOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AssignIn": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Ids"
+          },
+          "assigneeId": {
+            "type": "string",
+            "title": "Assigneeid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ids",
+          "assigneeId"
+        ],
+        "title": "AssignIn"
+      },
+      "CandidateOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "phone": {
+            "type": "string",
+            "title": "Phone"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "maintenance",
+              "housekeeping"
+            ],
+            "title": "Role"
+          },
+          "photo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo"
+          },
+          "retiredAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retiredat"
+          },
+          "load": {
+            "type": "integer",
+            "title": "Load"
+          },
+          "capacity": {
+            "type": "integer",
+            "title": "Capacity"
+          },
+          "inProgress": {
+            "type": "integer",
+            "title": "Inprogress"
+          },
+          "closed": {
+            "type": "integer",
+            "title": "Closed"
+          },
+          "properties": {
+            "items": {
+              "$ref": "#/components/schemas/PropertyOut"
+            },
+            "type": "array",
+            "title": "Properties"
+          },
+          "inBuilding": {
+            "type": "boolean",
+            "title": "Inbuilding"
+          },
+          "atCapacity": {
+            "type": "boolean",
+            "title": "Atcapacity"
+          },
+          "isCurrent": {
+            "type": "boolean",
+            "title": "Iscurrent"
+          },
+          "score": {
+            "type": "integer",
+            "title": "Score"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "phone",
+          "role",
+          "photo",
+          "retiredAt",
+          "load",
+          "capacity",
+          "inProgress",
+          "closed",
+          "properties",
+          "inBuilding",
+          "atCapacity",
+          "isCurrent",
+          "score"
+        ],
+        "title": "CandidateOut",
+        "description": "A roster member ranked for one request's assign panel."
+      },
+      "CategoryRollupOut": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "requests": {
+            "type": "integer",
+            "title": "Requests"
+          },
+          "spend": {
+            "type": "number",
+            "title": "Spend"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "requests",
+          "spend"
+        ],
+        "title": "CategoryRollupOut",
+        "description": "`CategoryRollup` without `label`, which the frontend adds."
+      },
       "CompleteJobIn": {
         "properties": {
           "notes": {
@@ -625,6 +2375,284 @@
         },
         "type": "object",
         "title": "CompleteJobIn"
+      },
+      "DashboardOut": {
+        "properties": {
+          "open": {
+            "type": "integer",
+            "title": "Open"
+          },
+          "unassigned": {
+            "type": "integer",
+            "title": "Unassigned"
+          },
+          "inProgress": {
+            "type": "integer",
+            "title": "Inprogress"
+          },
+          "closed": {
+            "type": "integer",
+            "title": "Closed"
+          },
+          "byStage": {
+            "items": {
+              "$ref": "#/components/schemas/StageCount"
+            },
+            "type": "array",
+            "title": "Bystage"
+          },
+          "raised": {
+            "type": "integer",
+            "title": "Raised"
+          },
+          "urgentOpen": {
+            "type": "integer",
+            "title": "Urgentopen"
+          },
+          "urgentBuildings": {
+            "type": "integer",
+            "title": "Urgentbuildings"
+          },
+          "maintenanceSpend": {
+            "type": "number",
+            "title": "Maintenancespend"
+          },
+          "periodSpend": {
+            "type": "number",
+            "title": "Periodspend"
+          },
+          "costTrend": {
+            "items": {
+              "$ref": "#/components/schemas/MonthTotal"
+            },
+            "type": "array",
+            "title": "Costtrend"
+          }
+        },
+        "type": "object",
+        "required": [
+          "open",
+          "unassigned",
+          "inProgress",
+          "closed",
+          "byStage",
+          "raised",
+          "urgentOpen",
+          "urgentBuildings",
+          "maintenanceSpend",
+          "periodSpend",
+          "costTrend"
+        ],
+        "title": "DashboardOut"
+      },
+      "EnrichedRequestOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "unitId": {
+            "type": "string",
+            "title": "Unitid"
+          },
+          "tenantId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tenantid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "maintenance",
+              "housekeeping"
+            ],
+            "title": "Type"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "urgent",
+              "normal"
+            ],
+            "title": "Priority"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "submitted",
+              "assigned",
+              "in-progress",
+              "done"
+            ],
+            "title": "Stage"
+          },
+          "assigneeId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigneeid"
+          },
+          "origin": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "ops",
+                  "tenant"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat"
+          },
+          "stageHistory": {
+            "items": {
+              "$ref": "#/components/schemas/StageEntryOut"
+            },
+            "type": "array",
+            "title": "Stagehistory"
+          },
+          "photos": {
+            "items": {
+              "$ref": "#/components/schemas/PhotoOut"
+            },
+            "type": "array",
+            "title": "Photos"
+          },
+          "charge": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Charge"
+          },
+          "completionNotes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completionnotes"
+          },
+          "schedule": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScheduleOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "completionPhotos": {
+            "items": {
+              "$ref": "#/components/schemas/PhotoOut"
+            },
+            "type": "array",
+            "title": "Completionphotos"
+          },
+          "handBack": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HandBackOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unit": {
+            "$ref": "#/components/schemas/UnitOut"
+          },
+          "property": {
+            "$ref": "#/components/schemas/PropertyOut"
+          },
+          "tenant": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TenantOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assignee": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StaffOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "unitId",
+          "tenantId",
+          "type",
+          "category",
+          "priority",
+          "summary",
+          "description",
+          "stage",
+          "assigneeId",
+          "origin",
+          "createdAt",
+          "stageHistory",
+          "photos",
+          "charge",
+          "completionNotes",
+          "schedule",
+          "completionPhotos",
+          "handBack",
+          "unit",
+          "property",
+          "tenant",
+          "assignee"
+        ],
+        "title": "EnrichedRequestOut",
+        "description": "`EnrichedRequest` in the frontend's operations.ts: a request with the\nrecords it points at. The frontend adds `tier` itself with `tierFor()`."
       },
       "ErrorOut": {
         "properties": {
@@ -1049,6 +3077,113 @@
         ],
         "title": "LocationOut"
       },
+      "MonthTotal": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month"
+          },
+          "total": {
+            "type": "number",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "total"
+        ],
+        "title": "MonthTotal"
+      },
+      "NewRequestIn": {
+        "properties": {
+          "unitId": {
+            "type": "string",
+            "title": "Unitid"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "urgent",
+              "normal"
+            ],
+            "title": "Priority",
+            "default": "normal"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "photos": {
+            "items": {
+              "$ref": "#/components/schemas/PhotoIn"
+            },
+            "type": "array",
+            "title": "Photos",
+            "default": []
+          },
+          "assigneeId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigneeid"
+          },
+          "scheduledDate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduleddate"
+          },
+          "scheduledSlot": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduledslot"
+          },
+          "origin": {
+            "type": "string",
+            "enum": [
+              "ops",
+              "tenant"
+            ],
+            "title": "Origin",
+            "default": "ops"
+          }
+        },
+        "type": "object",
+        "required": [
+          "unitId",
+          "category"
+        ],
+        "title": "NewRequestIn",
+        "description": "`NewRequest` in operations.ts. `type`, `tenantId` and `charge` are not\nasked for: the category decides the trade, the unit decides the tenant, and\nthe rate card decides the price."
+      },
       "PhotoIn": {
         "properties": {
           "name": {
@@ -1096,6 +3231,27 @@
         ],
         "title": "PhotoOut"
       },
+      "PriorityIn": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Ids"
+          },
+          "priority": {
+            "type": "string",
+            "title": "Priority"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ids",
+          "priority"
+        ],
+        "title": "PriorityIn"
+      },
       "PropertyOut": {
         "properties": {
           "id": {
@@ -1118,6 +3274,128 @@
           "address"
         ],
         "title": "PropertyOut"
+      },
+      "PropertyRollupOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          },
+          "units": {
+            "type": "integer",
+            "title": "Units"
+          },
+          "requests": {
+            "type": "integer",
+            "title": "Requests"
+          },
+          "open": {
+            "type": "integer",
+            "title": "Open"
+          },
+          "unassigned": {
+            "type": "integer",
+            "title": "Unassigned"
+          },
+          "spend": {
+            "type": "number",
+            "title": "Spend"
+          },
+          "spendPerUnit": {
+            "type": "number",
+            "title": "Spendperunit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "address",
+          "units",
+          "requests",
+          "open",
+          "unassigned",
+          "spend",
+          "spendPerUnit"
+        ],
+        "title": "PropertyRollupOut",
+        "description": "Cost and volume for one building, over the report period."
+      },
+      "RateIn": {
+        "properties": {
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          }
+        },
+        "type": "object",
+        "title": "RateIn"
+      },
+      "RateOut": {
+        "properties": {
+          "serviceType": {
+            "type": "string",
+            "title": "Servicetype"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "price": {
+            "type": "number",
+            "title": "Price"
+          },
+          "retiredAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retiredat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "serviceType",
+          "label",
+          "price",
+          "retiredAt"
+        ],
+        "title": "RateOut",
+        "description": "`HousekeepingRate`, plus when it left the card, if it has."
       },
       "RepeatFaultOut": {
         "properties": {
@@ -1142,6 +3420,108 @@
         ],
         "title": "RepeatFaultOut",
         "description": "A unit that keeps failing the same way: the repair-versus-replace\nsignal. Derived when read, never stored."
+      },
+      "RequestIdsIn": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ids"
+        ],
+        "title": "RequestIdsIn"
+      },
+      "RosterMemberOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "phone": {
+            "type": "string",
+            "title": "Phone"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "maintenance",
+              "housekeeping"
+            ],
+            "title": "Role"
+          },
+          "photo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo"
+          },
+          "retiredAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retiredat"
+          },
+          "load": {
+            "type": "integer",
+            "title": "Load"
+          },
+          "capacity": {
+            "type": "integer",
+            "title": "Capacity"
+          },
+          "inProgress": {
+            "type": "integer",
+            "title": "Inprogress"
+          },
+          "closed": {
+            "type": "integer",
+            "title": "Closed"
+          },
+          "properties": {
+            "items": {
+              "$ref": "#/components/schemas/PropertyOut"
+            },
+            "type": "array",
+            "title": "Properties"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "phone",
+          "role",
+          "photo",
+          "retiredAt",
+          "load",
+          "capacity",
+          "inProgress",
+          "closed",
+          "properties"
+        ],
+        "title": "RosterMemberOut",
+        "description": "A staff member with their load, read off the requests they hold."
       },
       "ScheduleOut": {
         "properties": {
@@ -1341,6 +3721,56 @@
         "title": "ServiceRequestOut",
         "description": "`ServiceRequest` in types.ts. `stage` and `createdAt` are read from the\nhistory (see the model); `schedule` and `handBack` are rebuilt from their\ncolumns."
       },
+      "StaffIn": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "photo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo"
+          }
+        },
+        "type": "object",
+        "title": "StaffIn"
+      },
       "StaffOut": {
         "properties": {
           "id": {
@@ -1373,6 +3803,18 @@
               }
             ],
             "title": "Photo"
+          },
+          "retiredAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retiredat"
           }
         },
         "type": "object",
@@ -1381,9 +3823,34 @@
           "name",
           "phone",
           "role",
-          "photo"
+          "photo",
+          "retiredAt"
         ],
         "title": "StaffOut"
+      },
+      "StageCount": {
+        "properties": {
+          "stage": {
+            "type": "string",
+            "enum": [
+              "submitted",
+              "assigned",
+              "in-progress",
+              "done"
+            ],
+            "title": "Stage"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stage",
+          "count"
+        ],
+        "title": "StageCount"
       },
       "StageEntryOut": {
         "properties": {
@@ -1409,6 +3876,57 @@
           "at"
         ],
         "title": "StageEntryOut"
+      },
+      "TenantAccountOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "phone": {
+            "type": "string",
+            "title": "Phone"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UnitOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "property": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PropertyOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "phone",
+          "email",
+          "unit",
+          "property"
+        ],
+        "title": "TenantAccountOut",
+        "description": "A tenant with the unit they occupy."
       },
       "TenantOut": {
         "properties": {
@@ -1492,6 +4010,116 @@
           "bathrooms"
         ],
         "title": "UnitOut"
+      },
+      "UnitRecordOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "propertyId": {
+            "type": "string",
+            "title": "Propertyid"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "occupied",
+              "under-maintenance",
+              "vacant"
+            ],
+            "title": "Status"
+          },
+          "tenantId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tenantid"
+          },
+          "bedrooms": {
+            "type": "integer",
+            "title": "Bedrooms"
+          },
+          "bathrooms": {
+            "type": "integer",
+            "title": "Bathrooms"
+          },
+          "property": {
+            "$ref": "#/components/schemas/PropertyOut"
+          },
+          "tenant": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TenantOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "requestCount": {
+            "type": "integer",
+            "title": "Requestcount"
+          },
+          "openCount": {
+            "type": "integer",
+            "title": "Opencount"
+          },
+          "lifetimeSpend": {
+            "type": "number",
+            "title": "Lifetimespend"
+          },
+          "lastServicedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastservicedat"
+          },
+          "repeatFault": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RepeatFaultOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "propertyId",
+          "label",
+          "status",
+          "tenantId",
+          "bedrooms",
+          "bathrooms",
+          "property",
+          "tenant",
+          "requestCount",
+          "openCount",
+          "lifetimeSpend",
+          "lastServicedAt",
+          "repeatFault"
+        ],
+        "title": "UnitRecordOut",
+        "description": "`UnitRecord`: a unit with what one trade's work there adds up to."
       },
       "ValidationError": {
         "properties": {

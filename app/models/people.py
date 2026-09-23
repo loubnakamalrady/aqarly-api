@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy import String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -29,3 +31,7 @@ class Staff(Base):
     role: Mapped[RequestType]
     # A data URL until Phase 8 gives photos a file store.
     photo: Mapped[str | None] = mapped_column(Text)
+    # Set when the member is removed from the roster. The row stays so closed
+    # work still says who did it; retired members leave every list and can't
+    # be assigned. Only possible once they hold no open work.
+    retired_at: Mapped[datetime | None]

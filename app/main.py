@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from app.routers import field, health, listings
+from app.routers import field, health, listings, portfolio, rates, requests, staff, tenants
 from app.services.errors import Conflict, Forbidden, Invalid, NotFound, ServiceError
 
 app = FastAPI(
@@ -13,6 +13,11 @@ app = FastAPI(
 app.include_router(health.router)
 app.include_router(listings.router)
 app.include_router(field.router)
+app.include_router(requests.router)
+app.include_router(portfolio.router)
+app.include_router(staff.router)
+app.include_router(rates.router)
+app.include_router(tenants.router)
 
 # A service's refusal becomes an HTTP status here, with its message as
 # `detail` so the frontend can show it as it is.

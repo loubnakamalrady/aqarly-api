@@ -17,7 +17,12 @@ def get_session() -> Iterator[Session]:
     """FastAPI dependency: one session per request, closed when it ends.
 
     Routes take it as `session: Session = Depends(get_session)`. Nothing is
-    committed unless the route commits.
+    committed unless the route commits, and a request that fails is rolled
+    back explicitly, so a write refused halfway leaves nothing behind.
     """
     with SessionLocal() as session:
-        yield session
+        try:
+            yield session
+        except Exception:
+            session.rollback()
+            raise

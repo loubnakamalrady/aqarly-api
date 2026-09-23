@@ -63,6 +63,22 @@ Endpoints so far:
 | `POST /technicians/{id}/jobs/{jobId}/start` | `startRequest()` |
 | `POST /technicians/{id}/jobs/{jobId}/complete` | `completeRequest()` |
 | `POST /technicians/{id}/jobs/{jobId}/hand-back` | `handBackRequest()` |
+| `GET /requests?type=&stage=&open=&search=&sort=…` | `getRequests()` |
+| `GET /requests/{id}` | `getRequestById()` |
+| `GET /requests/{id}/candidates` | `getAssignmentCandidates()` |
+| `POST /requests` | `createRequest()` |
+| `POST /requests/assign` · `/priority` · `/delete` | `assignRequests()` · `setPriority()` · `deleteRequests()` |
+| `GET /units?propertyId=&type=` · `GET /units/{id}` | `getUnits()` · `getUnitById()` |
+| `GET /properties` | `getProperties()` (buildings) |
+| `GET /reports/properties` · `/categories` · `/dashboard` | `getPropertyRollups()` · `getCategoryRollups()` · `getDashboardStats()` |
+| `GET /staff/roster` · `GET /staff/{id}` | `getStaffRoster()` · `getSignedInTechnician()` |
+| `POST /staff` · `PUT /staff/{id}` · `DELETE /staff/{id}` | `addStaff()` · `updateStaff()` · `removeStaff()` (retires) |
+| `GET /housekeeping-rates?includeRetired=` | `getHousekeepingRates()` |
+| `POST /housekeeping-rates` · `DELETE /housekeeping-rates/{serviceType}` | `addHousekeepingRate()` · `removeHousekeepingRate()` (retires) |
+| `GET /tenants/{id}` | `getTenantById()` · `getSignedInTenant()` |
+
+Reports take `period=month|quarter|year` (leave it out for all time) and
+`type=maintenance|housekeeping` (defaults to maintenance).
 
 After changing any route or schema, re-export the OpenAPI schema. The
 frontend generates its TypeScript types from this file, and

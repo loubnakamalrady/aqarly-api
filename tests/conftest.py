@@ -71,7 +71,16 @@ def client(session: Session) -> Iterator[TestClient]:
     from app.db import get_session
     from app.main import app
 
-    app.dependency_overrides[get_session] = lambda: session
+    def test_session() -> Iterator[Session]:
+        # Behaves like the real dependency: a failed request is rolled back
+        # (here, to the test's savepoint).
+        try:
+            yield session
+        except Exception:
+            session.rollback()
+            raise
+
+    app.dependency_overrides[get_session] = test_session
     try:
         yield TestClient(app)
     finally:
