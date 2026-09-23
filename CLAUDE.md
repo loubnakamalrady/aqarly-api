@@ -99,6 +99,31 @@ autogenerate won't see its table.
   with closed work can't be deleted yet, although the frontend allows that.
   Decide in Phase 7 (soft-remove staff, or null the assignee).
 
+## Endpoints
+
+- **Schemas** (`app/schemas`) extend `CamelModel`: snake_case fields,
+  camelCase JSON and OpenAPI, `from_attributes` on. Shapes that `types.ts`
+  nests but the tables flatten (`schedule`, `handBack`, `location`) are rebuilt
+  in a `from_model` classmethod. Money is `Money` (float on the wire).
+- **Services** (`app/services`) hold the reads that derive things, and raise
+  `NotFound` / `Forbidden` from `services/errors.py`. `app/main.py` maps them
+  to 404 / 403 with `{"detail": message}`. Every refusal is declared in the
+  route's `responses=` with `ErrorOut`, so it appears in the OpenAPI schema.
+- A service that depends on the current time takes `now` as a parameter (the
+  router passes `datetime.now(UTC)`), so tests can fix it.
+- `tier` is not in any response: it's display logic, and the frontend derives
+  it with `tierFor()`.
+- The field app's routes carry the technician in the path
+  (`/technicians/{id}/worklist`, `/technicians/{id}/jobs/{jobId}`) because
+  there's no session yet. They become `/me/...` with auth.
+- **Parity with the frontend.** When porting a read, compare the endpoint
+  against the frontend's own function over the same seed: run
+  `packages/core/src/operations.ts` under Node 24 with a loader hook that adds
+  `.ts` to extensionless imports and serves `.json` as `export default …`, dump
+  its output, and diff field by field. The only allowed differences are
+  `tier`, and optional fields the frontend omits where the API sends
+  `null`/`[]`. Phase 4's worklist and job reads matched exactly.
+
 ## Seed
 
 `app/seed.py` (run by `scripts/seed.py`) replaces the frontend's "Reset demo
@@ -131,11 +156,10 @@ Use `uv add` / `uv add --dev` for dependencies. Never `pip install`.
 
 Done: Phase 0 (tooling), Phase 1 (an empty API with `/health`, Alembic
 wired), Phase 2 (tables for every `types.ts` entity plus `listings`; first
-migration applied) and Phase 3 (`scripts/seed.py`).
+migration applied), Phase 3 (`scripts/seed.py`) and Phase 4 (`/listings`,
+`/listings/{slug}`, `/technicians/{id}/worklist`,
+`/technicians/{id}/jobs/{jobId}`).
 
-4. First reads: listings (`/listings`, `/listings/{slug}`),
-   `/technicians/{id}/worklist` (started first, then emergency, then oldest),
-   `/jobs/{id}`, with a test for each.
 5. Connect the frontend: export `openapi.json`, generate types, and switch
    `getProperties`, `getWorklist` and `getJob` to `fetch`.
 6. Remaining reads by area (ops, housekeeping, tenant); derived state moves

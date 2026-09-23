@@ -51,6 +51,16 @@ Then open <http://localhost:8000/docs> for the interactive docs, or check
 <http://localhost:8000/health>. It returns `{"ok": true, "database": "connected"}`,
 or a 503 with `"unreachable"` if Postgres is down.
 
+Endpoints so far:
+
+| Route | Frontend function it replaces |
+|---|---|
+| `GET /health` | (none) |
+| `GET /listings?purpose=&type=&featured=` | `getProperties()` |
+| `GET /listings/{slug}` | `getPropertyBySlug()` |
+| `GET /technicians/{id}/worklist` | `getWorklist()` |
+| `GET /technicians/{id}/jobs/{jobId}` | `getJob()` |
+
 Run the tests (the database must be running):
 
 ```bash

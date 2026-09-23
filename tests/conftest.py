@@ -11,6 +11,7 @@ from collections.abc import Iterator
 import pytest
 from alembic import command
 from alembic.config import Config
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import URL, make_url
 from sqlalchemy.orm import Session
@@ -60,3 +61,18 @@ def session() -> Iterator[Session]:
         finally:
             db.close()
             transaction.rollback()
+
+
+@pytest.fixture
+def client(session: Session) -> Iterator[TestClient]:
+    """The API, reading and writing through the test's `session`, so a test
+    can add rows and then call an endpoint that sees them, and everything is
+    still rolled back afterwards."""
+    from app.db import get_session
+    from app.main import app
+
+    app.dependency_overrides[get_session] = lambda: session
+    try:
+        yield TestClient(app)
+    finally:
+        app.dependency_overrides.clear()
