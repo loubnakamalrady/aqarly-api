@@ -16,3 +16,13 @@ class NotFound(ServiceError):
 
 class Forbidden(ServiceError):
     """It exists, but not for whoever asked. → 403"""
+
+
+class Conflict(ServiceError):
+    """The thing's current state doesn't allow this (a closed job, a job not
+    started yet). → 409"""
+
+
+class Invalid(ServiceError):
+    """What was sent can't be accepted as it is (too few photos, no reason).
+    → 400. FastAPI's own 422 still covers a body of the wrong shape."""

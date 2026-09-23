@@ -1,0 +1,1605 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Aqarly API",
+    "description": "Backend for the Aqarly platform's apps.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Health",
+        "description": "Whether the API is up and can reach its database.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/listings": {
+      "get": {
+        "tags": [
+          "listings"
+        ],
+        "summary": "List Listings",
+        "description": "The marketing site's listings: `getProperties()` in the frontend.\nEach filter is optional and they combine.",
+        "operationId": "list_listings_listings_get",
+        "parameters": [
+          {
+            "name": "purpose",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Purpose"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type"
+            }
+          },
+          {
+            "name": "featured",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Featured"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ListingOut"
+                  },
+                  "title": "Response List Listings Listings Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/listings/{slug}": {
+      "get": {
+        "tags": [
+          "listings"
+        ],
+        "summary": "Get Listing",
+        "description": "One listing: `getPropertyBySlug()` in the frontend.",
+        "operationId": "get_listing_listings__slug__get",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/technicians/{technician_id}/worklist": {
+      "get": {
+        "tags": [
+          "field"
+        ],
+        "summary": "Get Worklist",
+        "description": "Everything assigned to this technician. Open work is ordered started\nfirst, then emergencies, then oldest; closed work, most recently closed\nfirst.",
+        "operationId": "get_worklist_technicians__technician_id__worklist_get",
+        "parameters": [
+          {
+            "name": "technician_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Technician Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorklistOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/technicians/{technician_id}/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "field"
+        ],
+        "summary": "Get Job",
+        "description": "One job. Refused (403) if this technician doesn't hold it.",
+        "operationId": "get_job_technicians__technician_id__jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "technician_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Technician Id"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/technicians/{technician_id}/jobs/{job_id}/start": {
+      "post": {
+        "tags": [
+          "field"
+        ],
+        "summary": "Start Job",
+        "description": "Arriving on site: moves the job to in-progress. Starting a job already\nunder way changes nothing.",
+        "operationId": "start_job_technicians__technician_id__jobs__job_id__start_post",
+        "parameters": [
+          {
+            "name": "technician_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Technician Id"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/technicians/{technician_id}/jobs/{job_id}/complete": {
+      "post": {
+        "tags": [
+          "field"
+        ],
+        "summary": "Complete Job",
+        "description": "Closes a started job. Needs at least two photos of the work.",
+        "operationId": "complete_job_technicians__technician_id__jobs__job_id__complete_post",
+        "parameters": [
+          {
+            "name": "technician_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Technician Id"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteJobIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/technicians/{technician_id}/jobs/{job_id}/hand-back": {
+      "post": {
+        "tags": [
+          "field"
+        ],
+        "summary": "Hand Back Job",
+        "description": "'Can't do it': the job goes back to the office unassigned, with the\nreason. It's no longer this technician's, so the request comes back\nrather than a job.",
+        "operationId": "hand_back_job_technicians__technician_id__jobs__job_id__hand_back_post",
+        "parameters": [
+          {
+            "name": "technician_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Technician Id"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HandBackIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceRequestOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CompleteJobIn": {
+        "properties": {
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "photos": {
+            "items": {
+              "$ref": "#/components/schemas/PhotoIn"
+            },
+            "type": "array",
+            "title": "Photos",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "CompleteJobIn"
+      },
+      "ErrorOut": {
+        "properties": {
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "detail"
+        ],
+        "title": "ErrorOut",
+        "description": "Every refusal: a message the frontend can show as it is."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HandBackIn": {
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "title": "HandBackIn"
+      },
+      "HandBackOut": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "By"
+          },
+          "byName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Byname"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason",
+          "by",
+          "byName",
+          "at"
+        ],
+        "title": "HandBackOut"
+      },
+      "Health": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "database": {
+            "type": "string",
+            "enum": [
+              "connected",
+              "unreachable"
+            ],
+            "title": "Database"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok",
+          "database"
+        ],
+        "title": "Health"
+      },
+      "JobOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "unitId": {
+            "type": "string",
+            "title": "Unitid"
+          },
+          "tenantId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tenantid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "maintenance",
+              "housekeeping"
+            ],
+            "title": "Type"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "urgent",
+              "normal"
+            ],
+            "title": "Priority"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "submitted",
+              "assigned",
+              "in-progress",
+              "done"
+            ],
+            "title": "Stage"
+          },
+          "assigneeId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigneeid"
+          },
+          "origin": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "ops",
+                  "tenant"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat"
+          },
+          "stageHistory": {
+            "items": {
+              "$ref": "#/components/schemas/StageEntryOut"
+            },
+            "type": "array",
+            "title": "Stagehistory"
+          },
+          "photos": {
+            "items": {
+              "$ref": "#/components/schemas/PhotoOut"
+            },
+            "type": "array",
+            "title": "Photos"
+          },
+          "charge": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Charge"
+          },
+          "completionNotes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completionnotes"
+          },
+          "schedule": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScheduleOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "completionPhotos": {
+            "items": {
+              "$ref": "#/components/schemas/PhotoOut"
+            },
+            "type": "array",
+            "title": "Completionphotos"
+          },
+          "handBack": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HandBackOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unit": {
+            "$ref": "#/components/schemas/UnitOut"
+          },
+          "property": {
+            "$ref": "#/components/schemas/PropertyOut"
+          },
+          "tenant": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TenantOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assignee": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StaffOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "repeatFault": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RepeatFaultOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "unitId",
+          "tenantId",
+          "type",
+          "category",
+          "priority",
+          "summary",
+          "description",
+          "stage",
+          "assigneeId",
+          "origin",
+          "createdAt",
+          "stageHistory",
+          "photos",
+          "charge",
+          "completionNotes",
+          "schedule",
+          "completionPhotos",
+          "handBack",
+          "unit",
+          "property",
+          "tenant",
+          "assignee",
+          "repeatFault"
+        ],
+        "title": "JobOut",
+        "description": "Built with `JobOut.from_model(request, repeat_fault=...)`."
+      },
+      "ListingOut": {
+        "properties": {
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "purpose": {
+            "type": "string",
+            "title": "Purpose"
+          },
+          "price": {
+            "type": "number",
+            "title": "Price"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "bedrooms": {
+            "type": "integer",
+            "title": "Bedrooms"
+          },
+          "bathrooms": {
+            "type": "integer",
+            "title": "Bathrooms"
+          },
+          "areaSqft": {
+            "type": "integer",
+            "title": "Areasqft"
+          },
+          "location": {
+            "$ref": "#/components/schemas/LocationOut"
+          },
+          "images": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Images"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "featured": {
+            "type": "boolean",
+            "title": "Featured"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slug",
+          "title",
+          "type",
+          "purpose",
+          "price",
+          "currency",
+          "bedrooms",
+          "bathrooms",
+          "areaSqft",
+          "location",
+          "images",
+          "description",
+          "featured"
+        ],
+        "title": "ListingOut",
+        "description": "`Listing` in types.ts."
+      },
+      "LocationOut": {
+        "properties": {
+          "city": {
+            "type": "string",
+            "title": "City"
+          },
+          "area": {
+            "type": "string",
+            "title": "Area"
+          }
+        },
+        "type": "object",
+        "required": [
+          "city",
+          "area"
+        ],
+        "title": "LocationOut"
+      },
+      "PhotoIn": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "dataUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataurl"
+          }
+        },
+        "type": "object",
+        "title": "PhotoIn",
+        "description": "`PhotoInput` in types.ts: anything without bytes is dropped."
+      },
+      "PhotoOut": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "dataUrl": {
+            "type": "string",
+            "title": "Dataurl"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "dataUrl"
+        ],
+        "title": "PhotoOut"
+      },
+      "PropertyOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "address"
+        ],
+        "title": "PropertyOut"
+      },
+      "RepeatFaultOut": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "spend": {
+            "type": "number",
+            "title": "Spend"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "count",
+          "spend"
+        ],
+        "title": "RepeatFaultOut",
+        "description": "A unit that keeps failing the same way: the repair-versus-replace\nsignal. Derived when read, never stored."
+      },
+      "ScheduleOut": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "slot": {
+            "type": "string",
+            "title": "Slot"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "slot"
+        ],
+        "title": "ScheduleOut"
+      },
+      "ServiceRequestOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "unitId": {
+            "type": "string",
+            "title": "Unitid"
+          },
+          "tenantId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tenantid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "maintenance",
+              "housekeeping"
+            ],
+            "title": "Type"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "urgent",
+              "normal"
+            ],
+            "title": "Priority"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "submitted",
+              "assigned",
+              "in-progress",
+              "done"
+            ],
+            "title": "Stage"
+          },
+          "assigneeId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigneeid"
+          },
+          "origin": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "ops",
+                  "tenant"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat"
+          },
+          "stageHistory": {
+            "items": {
+              "$ref": "#/components/schemas/StageEntryOut"
+            },
+            "type": "array",
+            "title": "Stagehistory"
+          },
+          "photos": {
+            "items": {
+              "$ref": "#/components/schemas/PhotoOut"
+            },
+            "type": "array",
+            "title": "Photos"
+          },
+          "charge": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Charge"
+          },
+          "completionNotes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completionnotes"
+          },
+          "schedule": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScheduleOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "completionPhotos": {
+            "items": {
+              "$ref": "#/components/schemas/PhotoOut"
+            },
+            "type": "array",
+            "title": "Completionphotos"
+          },
+          "handBack": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HandBackOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "unitId",
+          "tenantId",
+          "type",
+          "category",
+          "priority",
+          "summary",
+          "description",
+          "stage",
+          "assigneeId",
+          "origin",
+          "createdAt",
+          "stageHistory",
+          "photos",
+          "charge",
+          "completionNotes",
+          "schedule",
+          "completionPhotos",
+          "handBack"
+        ],
+        "title": "ServiceRequestOut",
+        "description": "`ServiceRequest` in types.ts. `stage` and `createdAt` are read from the\nhistory (see the model); `schedule` and `handBack` are rebuilt from their\ncolumns."
+      },
+      "StaffOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "phone": {
+            "type": "string",
+            "title": "Phone"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "maintenance",
+              "housekeeping"
+            ],
+            "title": "Role"
+          },
+          "photo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "phone",
+          "role",
+          "photo"
+        ],
+        "title": "StaffOut"
+      },
+      "StageEntryOut": {
+        "properties": {
+          "stage": {
+            "type": "string",
+            "enum": [
+              "submitted",
+              "assigned",
+              "in-progress",
+              "done"
+            ],
+            "title": "Stage"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stage",
+          "at"
+        ],
+        "title": "StageEntryOut"
+      },
+      "TenantOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "phone": {
+            "type": "string",
+            "title": "Phone"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "phone",
+          "email"
+        ],
+        "title": "TenantOut"
+      },
+      "UnitOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "propertyId": {
+            "type": "string",
+            "title": "Propertyid"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "occupied",
+              "under-maintenance",
+              "vacant"
+            ],
+            "title": "Status"
+          },
+          "tenantId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tenantid"
+          },
+          "bedrooms": {
+            "type": "integer",
+            "title": "Bedrooms"
+          },
+          "bathrooms": {
+            "type": "integer",
+            "title": "Bathrooms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "propertyId",
+          "label",
+          "status",
+          "tenantId",
+          "bedrooms",
+          "bathrooms"
+        ],
+        "title": "UnitOut"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WorklistCounts": {
+        "properties": {
+          "left": {
+            "type": "integer",
+            "title": "Left"
+          },
+          "urgent": {
+            "type": "integer",
+            "title": "Urgent"
+          },
+          "closed": {
+            "type": "integer",
+            "title": "Closed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "left",
+          "urgent",
+          "closed"
+        ],
+        "title": "WorklistCounts"
+      },
+      "WorklistOut": {
+        "properties": {
+          "technician": {
+            "$ref": "#/components/schemas/StaffOut"
+          },
+          "next": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "queued": {
+            "items": {
+              "$ref": "#/components/schemas/JobOut"
+            },
+            "type": "array",
+            "title": "Queued"
+          },
+          "closed": {
+            "items": {
+              "$ref": "#/components/schemas/JobOut"
+            },
+            "type": "array",
+            "title": "Closed"
+          },
+          "counts": {
+            "$ref": "#/components/schemas/WorklistCounts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "technician",
+          "next",
+          "queued",
+          "closed",
+          "counts"
+        ],
+        "title": "WorklistOut",
+        "description": "One technician's own work, split the way the screen draws it: the job\nto lead with, the rest queued behind it, and what's closed."
+      }
+    }
+  }
+}

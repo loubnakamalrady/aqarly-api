@@ -12,11 +12,11 @@ from datetime import datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.models import ServiceRequest, Staff, Unit
+from app.models import CompletionPhoto, ServiceRequest, StageEntry, Staff, Unit
 from app.models.enums import Stage
-from app.schemas.field import JobOut, RepeatFaultOut, WorklistCounts, WorklistOut
+from app.schemas.field import JobOut, PhotoIn, RepeatFaultOut, WorklistCounts, WorklistOut
 from app.schemas.operations import StaffOut
-from app.services.errors import Forbidden, NotFound
+from app.services.errors import Conflict, Forbidden, Invalid, NotFound
 
 # A unit that has failed the same way this many times within this window is
 # flagged: the repair that keeps not holding is a different job from the one
@@ -148,3 +148,101 @@ def _repeat_fault(history: Sequence, now: datetime) -> RepeatFaultOut | None:
         h.charge for h in history if h.category == category and h.stage == "done" and h.charge
     )
     return RepeatFaultOut(category=category, count=count, spend=float(spend))
+
+
+# --- Writes ------------------------------------------------------------------
+# A technician only ever touches work that's theirs, and each write checks that
+# itself rather than trusting the caller. The router commits.
+
+# How many photos close a job, and how many of those are compulsory: closing
+# work with no evidence of it is the thing the finish screen exists to prevent.
+REQUIRED_COMPLETION_PHOTOS = 2
+MAX_COMPLETION_PHOTOS = 10
+
+
+def start_job(session: Session, job_id: str, technician_id: str, now: datetime) -> None:
+    """Arriving on site. Idempotent: starting a job already under way is the
+    technician confirming where they are, not a second event."""
+    request = _held_by(session, job_id, technician_id)
+    if request.stage != "in-progress":
+        _reach_stage(request, "in-progress", now)
+
+
+def complete_job(
+    session: Session,
+    job_id: str,
+    technician_id: str,
+    now: datetime,
+    *,
+    notes: str | None,
+    photos: Sequence[PhotoIn],
+) -> None:
+    """Closing a job. It takes photos of the work and can't set a price: a
+    housekeeping booking has carried its charge since it was booked, and
+    maintenance is never billed, so `charge` is deliberately untouched."""
+    request = _held_by(session, job_id, technician_id)
+    if request.stage != "in-progress":
+        raise Conflict("Start the job before closing it")
+
+    evidence = [p for p in photos if p.data_url]
+    if len(evidence) < REQUIRED_COMPLETION_PHOTOS:
+        raise Invalid(f"{REQUIRED_COMPLETION_PHOTOS} photos are needed to close a job")
+
+    # Kept apart from `photos`, which are the fault as it was reported.
+    request.completion_photos = [
+        CompletionPhoto(position=i, name=p.name or "Photo", data_url=p.data_url)
+        for i, p in enumerate(evidence[:MAX_COMPLETION_PHOTOS])
+    ]
+    request.completion_notes = (notes or "").strip() or None
+    _reach_stage(request, "done", now)
+
+
+def hand_back_job(
+    session: Session, job_id: str, technician_id: str, now: datetime, *, reason: str | None
+) -> None:
+    """'Can't do it': not a refusal and not a new stage. The job goes back to
+    unassigned `submitted`, which is where the ops queue reads its pressure
+    from, carrying why. Its history loses everything after `submitted`, so it
+    never reads as having reached a stage it's now behind."""
+    request = _held_by(session, job_id, technician_id)
+    reason = (reason or "").strip()
+    if not reason:
+        raise Invalid("Say why you can't do it")
+
+    technician = session.get(Staff, technician_id)
+    request.hand_back_reason = reason
+    request.hand_back_by = technician_id
+    request.hand_back_by_name = technician.name if technician else None
+    request.hand_back_at = now
+    request.assignee_id = None
+    request.stage_history = [e for e in request.stage_history if e.stage == "submitted"]
+
+
+def _held_by(session: Session, job_id: str, technician_id: str) -> ServiceRequest:
+    """The job, if this technician holds it and it's still open. The row is
+    locked until the transaction ends, so two taps can't both act on it."""
+    if session.get(Staff, technician_id) is None:
+        raise NotFound(f"No technician {technician_id}")
+    request = session.scalars(
+        select(ServiceRequest)
+        .where(ServiceRequest.id == job_id)
+        .options(selectinload(ServiceRequest.stage_history))
+        .with_for_update(of=ServiceRequest)
+    ).one_or_none()
+    if request is None:
+        raise NotFound(f"No job {job_id}")
+    if request.assignee_id != technician_id:
+        raise Forbidden("That job is not yours to change")
+    if request.stage == "done":
+        raise Conflict("That job is already closed")
+    return request
+
+
+def _reach_stage(request: ServiceRequest, stage: Stage, at: datetime) -> None:
+    """A stage is reached once: reaching it again moves its time rather than
+    adding a second entry."""
+    existing = next((e for e in request.stage_history if e.stage == stage), None)
+    if existing:
+        existing.at = at
+    else:
+        request.stage_history.append(StageEntry(stage=stage, at=at))

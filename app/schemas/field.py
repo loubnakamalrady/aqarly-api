@@ -19,6 +19,22 @@ class JobOut(EnrichedRequestOut):
     repeat_fault: RepeatFaultOut | None
 
 
+class PhotoIn(CamelModel):
+    """`PhotoInput` in types.ts: anything without bytes is dropped."""
+
+    name: str | None = None
+    data_url: str | None = None
+
+
+class CompleteJobIn(CamelModel):
+    notes: str | None = None
+    photos: list[PhotoIn] = []
+
+
+class HandBackIn(CamelModel):
+    reason: str | None = None
+
+
 class WorklistCounts(CamelModel):
     left: int
     urgent: int

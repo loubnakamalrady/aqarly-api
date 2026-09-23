@@ -13,8 +13,10 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.db import get_session
+from app.models import ServiceRequest
 from app.schemas.common import ErrorOut
-from app.schemas.field import JobOut, WorklistOut
+from app.schemas.field import CompleteJobIn, HandBackIn, JobOut, WorklistOut
+from app.schemas.operations import ServiceRequestOut
 from app.services import field
 
 router = APIRouter(prefix="/technicians/{technician_id}", tags=["field"])
@@ -38,3 +40,57 @@ def get_worklist(technician_id: str, session: SessionDep) -> WorklistOut:
 def get_job(technician_id: str, job_id: str, session: SessionDep) -> JobOut:
     """One job. Refused (403) if this technician doesn't hold it."""
     return field.get_job(session, job_id, technician_id, now=datetime.now(UTC))
+
+
+# --- Writes ------------------------------------------------------------------
+# Each commits the change, then reads the job back fresh: `stage` is computed
+# from the history the write just changed.
+
+_WRITE_ERRORS = {
+    400: {"model": ErrorOut},
+    403: {"model": ErrorOut},
+    404: {"model": ErrorOut},
+    409: {"model": ErrorOut},
+}
+
+
+@router.post("/jobs/{job_id}/start", response_model=JobOut, responses=_WRITE_ERRORS)
+def start_job(technician_id: str, job_id: str, session: SessionDep) -> JobOut:
+    """Arriving on site: moves the job to in-progress. Starting a job already
+    under way changes nothing."""
+    now = datetime.now(UTC)
+    field.start_job(session, job_id, technician_id, now)
+    return _committed_job(session, job_id, technician_id, now)
+
+
+@router.post("/jobs/{job_id}/complete", response_model=JobOut, responses=_WRITE_ERRORS)
+def complete_job(
+    technician_id: str, job_id: str, body: CompleteJobIn, session: SessionDep
+) -> JobOut:
+    """Closes a started job. Needs at least two photos of the work."""
+    now = datetime.now(UTC)
+    field.complete_job(
+        session, job_id, technician_id, now, notes=body.notes, photos=body.photos
+    )
+    return _committed_job(session, job_id, technician_id, now)
+
+
+@router.post(
+    "/jobs/{job_id}/hand-back", response_model=ServiceRequestOut, responses=_WRITE_ERRORS
+)
+def hand_back_job(
+    technician_id: str, job_id: str, body: HandBackIn, session: SessionDep
+) -> ServiceRequestOut:
+    """'Can't do it': the job goes back to the office unassigned, with the
+    reason. It's no longer this technician's, so the request comes back
+    rather than a job."""
+    field.hand_back_job(session, job_id, technician_id, datetime.now(UTC), reason=body.reason)
+    session.commit()
+    session.expire_all()
+    return ServiceRequestOut.from_model(session.get_one(ServiceRequest, job_id))
+
+
+def _committed_job(session: Session, job_id: str, technician_id: str, now: datetime) -> JobOut:
+    session.commit()
+    session.expire_all()
+    return field.get_job(session, job_id, technician_id, now)
