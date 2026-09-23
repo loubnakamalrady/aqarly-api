@@ -1,0 +1,27 @@
+# Render Blueprint: the staging API. Render reads this file from the repo and
+# creates (then keeps in sync) the service described here. See README →
+# "Staging" for the one-time setup.
+#
+# Every push to the `staging` branch rebuilds the container, runs the
+# database migrations, and only then swaps the new version in: if a migration
+# fails, the old version keeps running.
+
+services:
+  - type: web
+    name: aqarly-api-stg
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: staging
+    autoDeployTrigger: commit
+    dockerfilePath: ./Dockerfile
+    preDeployCommand: alembic upgrade head
+    # Render checks this to know the API is up. It's left open by the lock.
+    healthCheckPath: /health
+    envVars:
+      # Neon's connection string, pasted in once (never committed).
+      - key: DATABASE_URL
+        sync: false
+      # The shared staging password. Use the same one on every frontend.
+      - key: STAGING_PASSWORD
+        sync: false

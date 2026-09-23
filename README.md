@@ -102,6 +102,96 @@ Stop the database (`-v` also deletes its data):
 docker compose down
 ```
 
+## Staging
+
+A shared copy of everything, online, for free: the API on **Render** (in a
+Docker container), the five frontends on **Render**, and Postgres on **Neon**.
+Both are free plans with no credit card. Each repo has a `render.yaml` that
+describes its services; every push to the `staging` branch redeploys.
+
+What free costs: an app that gets no traffic for 15 minutes goes to sleep, and
+the next visit takes about a minute to wake it (the frontend, then the API),
+then it's fast. The free plan includes 750 running hours and 500 build minutes
+a month across all the services; light staging use fits.
+
+**Staging is locked.** There is no sign-in yet (roadmap Phase 9), so every
+app and the API ask for one shared username and password (`staging` and the
+password you choose). The browser shows its own login prompt; the frontends
+send the password to the API themselves. Locally nothing is locked, because
+`STAGING_PASSWORD` isn't set.
+
+### One-time setup
+
+1. **Pick the staging password** and keep it in a password manager:
+
+   ```bash
+   openssl rand -base64 24
+   ```
+
+2. **Database (Neon).** Sign up at <https://neon.com> with GitHub, create a
+   project in **AWS Europe Central (Frankfurt)**, and copy its connection
+   string (`postgresql://…neon.tech/…?sslmode=require`). Use it as it is.
+
+3. **Branches.** In each repo, create a `staging` branch from `main` and push
+   it (`git switch -c staging && git push -u origin staging`). Staging deploys
+   from this branch only, so `main` can move without touching it.
+
+4. **The API (Render).** Sign up at <https://render.com> with GitHub, and give
+   it access to this repo. Then **New → Blueprint**, pick this repo and the
+   `staging` branch. Render reads `render.yaml` and asks for:
+   - `DATABASE_URL`: the Neon connection string
+   - `STAGING_PASSWORD`: the password from step 1
+
+   The first deploy builds the container, runs the migrations
+   (`alembic upgrade head`), then starts. Note its address, e.g.
+   `https://aqarly-api-stg.onrender.com`.
+
+5. **Load the demo data** into staging, from your laptop (the frontend repo
+   must be next to this one, as locally):
+
+   ```bash
+   DATABASE_URL='<the Neon connection string>' uv run python scripts/seed.py
+   ```
+
+   Run it again any time to reset staging, just like locally.
+
+6. **The frontends (Render).** Give Render access to the frontend repo too,
+   then **New → Blueprint** on it, `staging` branch. It creates five services
+   and asks, for each, for:
+   - `API_URL`: the API's address from step 4 (no trailing slash)
+   - `STAGING_PASSWORD`: the same password
+
+### Addresses
+
+| What | Where |
+|---|---|
+| Swagger | `https://aqarly-api-stg.onrender.com/docs` |
+| Marketing site | `https://aqarly-web-stg.onrender.com` |
+| Ops portal | `https://aqarly-ops-stg.onrender.com` |
+| Tenant portal | `https://aqarly-tenant-stg.onrender.com` |
+| Housekeeping portal | `https://aqarly-housekeeping-stg.onrender.com` |
+| Field app | `https://aqarly-field-stg.onrender.com` |
+
+Render adds a suffix if a name is taken; the dashboard shows the real one.
+A custom domain (`dev.aqarlystg.…`) can be added per service later under
+**Settings → Custom Domains**: one DNS record each, HTTPS included.
+
+### Deploying
+
+Merge into `staging` and push. Render rebuilds only what changed: the API on
+any push to this repo; a frontend when its app or the shared packages change.
+Watch progress and logs in the Render dashboard. If an API migration fails,
+the previous version keeps running.
+
+### Trying it locally, the way staging runs
+
+```bash
+docker build -t aqarly-api .
+docker run -p 8010:10000 -e PORT=10000 -e STAGING_PASSWORD=try \
+  -e DATABASE_URL=postgresql://aqarly:aqarly@host.docker.internal:5432/aqarly aqarly-api
+curl -u staging:try localhost:8010/staff/roster
+```
+
 ## Migrations
 
 After changing a model in `app/models/`:

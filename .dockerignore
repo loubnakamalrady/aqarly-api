@@ -1,0 +1,11 @@
+# Kept out of the container: local environments, secrets, caches, git.
+.venv/
+.env
+.git/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.claude/
+.DS_Store

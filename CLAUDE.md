@@ -149,6 +149,20 @@ autogenerate won't see its table.
   `tier`, and optional fields the frontend omits where the API sends
   `null`/`[]`. Phase 4's worklist and job reads matched exactly.
 
+## Staging
+
+Render (free) runs this API from the `Dockerfile` and the five frontends,
+Neon (free) runs Postgres; `render.yaml` in each repo describes the services
+and a push to the `staging` branch deploys. The API runs `alembic upgrade
+head` as Render's pre-deploy step. README → "Staging" has the setup steps.
+
+`app/staging_lock.py` puts HTTP Basic auth in front of everything except
+`/health` when `STAGING_PASSWORD` is set; the frontends lock themselves the
+same way (`src/proxy.js` → `@aqarly/core/staging`) and send the credentials
+with every API call. It stands in until Phase 9's real sign-in; it is not
+user accounts. `DATABASE_URL` may be written `postgresql://…` as hosts give it:
+settings rewrites it to the psycopg driver.
+
 ## Seed
 
 `app/seed.py` (run by `scripts/seed.py`) replaces the frontend's "Reset demo

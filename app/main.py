@@ -3,12 +3,16 @@ from fastapi.responses import JSONResponse
 
 from app.routers import field, health, listings, portfolio, rates, requests, staff, tenants
 from app.services.errors import Conflict, Forbidden, Invalid, NotFound, ServiceError
+from app.staging_lock import staging_lock
 
 app = FastAPI(
     title="Aqarly API",
     version="0.1.0",
     description="Backend for the Aqarly platform's apps.",
 )
+
+# Closes a deployed copy behind the staging password; off locally.
+app.middleware("http")(staging_lock)
 
 app.include_router(health.router)
 app.include_router(listings.router)

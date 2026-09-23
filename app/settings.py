@@ -1,6 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # The repo root, so `.env` is found whichever directory a command runs from.
@@ -22,6 +23,23 @@ class Settings(BaseSettings):
     # Where scripts/seed.py reads operations.json and properties.json: the
     # frontend repo's seed data, which it only ever reads.
     frontend_data_dir: Path = ROOT.parent / "aqarly" / "packages" / "core" / "data"
+
+    # The staging lock. There is no sign-in yet (roadmap Phase 9), so a
+    # deployed copy is closed behind one shared username and password: people
+    # get the browser's login prompt, and the frontends send it with every call.
+    # Unset (as on a laptop), everything is open.
+    staging_user: str = "staging"
+    staging_password: str | None = None
+
+    @field_validator("database_url")
+    @classmethod
+    def _use_psycopg(cls, url: str) -> str:
+        """Hosts hand out `postgresql://…` (or `postgres://…`); SQLAlchemy
+        needs `postgresql+psycopg://…` to know which driver to use."""
+        for prefix in ("postgresql://", "postgres://"):
+            if url.startswith(prefix):
+                return "postgresql+psycopg://" + url.removeprefix(prefix)
+        return url
 
 
 @lru_cache
