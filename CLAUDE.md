@@ -157,10 +157,11 @@ and a push to the `staging` branch deploys. The API container runs `alembic
 upgrade head` as it starts (the free plan has no pre-deploy step). README → "Staging" has the setup steps.
 
 `app/staging_lock.py` puts HTTP Basic auth in front of everything except
-`/health` when `STAGING_PASSWORD` is set; the frontends lock themselves the
-same way (`src/proxy.js` → `@aqarly/core/staging`) and send the credentials
-with every API call. It stands in until Phase 9's real sign-in; it is not
-user accounts. `DATABASE_URL` may be written `postgresql://…` as hosts give it:
+`/health` when `STAGING_PASSWORD` is set. The frontends are deliberately open
+(the user wants shareable links; anyone with one can change demo data): they
+send the credentials with every API call (`@aqarly/core/staging`) and serve
+`X-Robots-Tag: noindex` when `STAGING_PASSWORD` is set. It stands in until
+Phase 9's real sign-in; it is not user accounts. `DATABASE_URL` may be written `postgresql://…` as hosts give it:
 settings rewrites it to the psycopg driver.
 
 ## Seed

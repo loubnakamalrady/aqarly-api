@@ -15,3 +15,6 @@ __pycache__/
 .DS_Store
 .idea/
 .vscode/
+
+# A deployed database connection string, kept only while seeding staging.
+.neon-url

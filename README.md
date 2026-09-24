@@ -114,11 +114,14 @@ the next visit takes about a minute to wake it (the frontend, then the API),
 then it's fast. The free plan includes 750 running hours and 500 build minutes
 a month across all the services; light staging use fits.
 
-**Staging is locked.** There is no sign-in yet (roadmap Phase 9), so every
-app and the API ask for one shared username and password (`staging` and the
-password you choose). The browser shows its own login prompt; the frontends
-send the password to the API themselves. Locally nothing is locked, because
-`STAGING_PASSWORD` isn't set.
+**The API is locked; the apps are not.** There is no sign-in yet (roadmap
+Phase 9), so the API and Swagger ask for one shared username and password
+(`staging` and the password you choose). The five apps are open to anyone
+with the link, so you can share them without a password: they send the
+password to the API themselves, server-side, and ask search engines not to
+list them. Anyone with an app link can change the demo data; reset it with
+the seed script. Locally nothing is locked, because `STAGING_PASSWORD` isn't
+set.
 
 ### One-time setup
 
@@ -160,7 +163,8 @@ send the password to the API themselves. Locally nothing is locked, because
    then **New → Blueprint** on it, `staging` branch. It creates five services
    and asks, for each, for:
    - `API_URL`: the API's address from step 4 (no trailing slash)
-   - `STAGING_PASSWORD`: the same password
+   - `STAGING_PASSWORD`: the same password (the apps use it to reach the API;
+     visitors never need it)
 
 ### Addresses
 
