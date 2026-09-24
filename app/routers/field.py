@@ -1,27 +1,34 @@
-"""The technician field app.
+"""The technician field app: one technician's own work.
 
-The technician is in the path because there is no sign-in yet: the frontend
-passes its stub `getSignedInTechnician()`'s id, as it passes it to `getJob`
-today. Once auth exists (Phase 9) the id comes from the session instead, and
-these become `/me/...`.
+The technician is in the path, and every route here refuses anyone but that
+technician, signed in to the field app (403 otherwise, 401 if nobody is).
 """
 
 from datetime import UTC, datetime
-from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.db import get_session
+from app.deps import SessionDep, StaffPrincipal
 from app.models import ServiceRequest
 from app.schemas.common import ErrorOut
 from app.schemas.field import CompleteJobIn, HandBackIn, JobOut, WorklistOut
 from app.schemas.operations import ServiceRequestOut
 from app.services import field
+from app.services.errors import Forbidden
 
-router = APIRouter(prefix="/technicians/{technician_id}", tags=["field"])
 
-SessionDep = Annotated[Session, Depends(get_session)]
+def _only_themselves(technician_id: str, who: StaffPrincipal) -> None:
+    if who.staff_id != technician_id:
+        raise Forbidden("You can only see your own work.")
+
+
+router = APIRouter(
+    prefix="/technicians/{technician_id}",
+    tags=["field"],
+    dependencies=[Depends(_only_themselves)],
+    responses={401: {"model": ErrorOut}, 403: {"model": ErrorOut}},
+)
 
 
 @router.get("/worklist", response_model=WorklistOut, responses={404: {"model": ErrorOut}})

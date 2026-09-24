@@ -164,6 +164,37 @@ send the credentials with every API call (`@aqarly/core/staging`) and serve
 Phase 9's real sign-in; it is not user accounts. `DATABASE_URL` may be written `postgresql://…` as hosts give it:
 settings rewrites it to the psycopg driver.
 
+## Sign-in (Phase 9)
+
+Everyone signs in with a phone number and a 6-digit code (`app/services/auth.py`,
+routes in `app/routers/auth.py`). The same phone opens a different account per
+app: `tenant` → a tenant (or a registration, or `new` to register), `field` →
+staff, `ops` / `housekeeping` → an `Admin` of that trade. Staff and admins
+can't register; tenants can, and ops approves (`/registrations`), which makes
+them the unit's tenant, replacing whoever was there (the user chose approval).
+
+- Codes and session tokens are stored hashed. Codes: 10 minutes, 5 wrong
+  tries, 5 per phone per 15 minutes, each new one kills the last. Sessions: 30
+  days, sent as the `X-Session` header (not `Authorization`, which the staging
+  lock uses; the two travel together).
+- `login_code_delivery = "screen"`: the API returns the code (`shownCode`) so
+  the app can show it. Free, but anyone can then sign in as anyone: fine for
+  dev and staging, must become a texting provider before real users.
+- **Every route declares who it's for** with a dependency from `app/deps.py`
+  (`SignedIn`, `AdminPrincipal`, `OpsPrincipal`, `TenantPrincipal`,
+  `StaffPrincipal`). Admins work in their own trade only (`own_trade`); tenants
+  see their own requests and raise them for their own home (marked `tenant`,
+  unassigned); technicians only their own `/technicians/{id}/…`. Only
+  `/health`, `/listings`, `/auth/code`, `/auth/verify` and `/auth/logout`
+  are open. A new route must pick one.
+- A tenant-portal session is worked out from its phone on every request, so
+  approval takes effect without signing in again.
+- Demo admins (seeded, not from the frontend JSON): ops `+000 000 0900`,
+  housekeeping `+000 000 0901`. Tenants and staff sign in with their seed
+  phones (e.g. Layla `+000 000 0001`, Youssef Haddad `+000 000 0101`).
+- Tests sign in with the `sign_in` fixture (`sign_in("ops", admin_id=…)`;
+  tenants by `phone=`), or through the real flow as `tests/test_auth.py` does.
+
 ## Seed
 
 `app/seed.py` (run by `scripts/seed.py`) replaces the frontend's "Reset demo
@@ -205,5 +236,7 @@ database). Each was checked against the frontend's own functions: the final
 old-versus-new core comparison matched 906 reads and all 18 refusal messages.
 
 8. Photos to object storage (MinIO locally, R2/S3 deployed).
-9. Auth: roles ops admin, housekeeping admin, technician, tenant.
+9. Auth. **In progress:** the API side is done (sign-in, registration, every
+   route guarded); next the tenant portal, the field app, then ops and
+   housekeeping, which each need their sign-in screens and to send the session.
 10. Deploy (Neon, Railway/Render/Fly), and add CI: tests and the `openapi.json` export on every push.

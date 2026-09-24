@@ -19,6 +19,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from app.models import (
+    Admin,
     Base,
     CompletionPhoto,
     HousekeepingRate,
@@ -165,6 +166,14 @@ class _Listing(_Json):
 _LISTINGS = TypeAdapter(list[_Listing])
 
 
+# The admin portals' demo accounts. The frontend's seed has no admins (it had
+# no sign-in), so they're defined here. Sign in with these numbers.
+DEMO_ADMINS = [
+    Admin(id="adm-ops", name="Property admin", phone="+000 000 0900", trade="maintenance"),
+    Admin(id="adm-housekeeping", name="Housekeeping admin", phone="+000 000 0901", trade="housekeeping"),
+]
+
+
 # --- Loading ---------------------------------------------------------------
 
 
@@ -198,6 +207,9 @@ def seed(session: Session, data_dir: Path) -> dict[str, int]:
     session.add_all(Property(**p.model_dump()) for p in operations.properties)
     session.add_all(Tenant(**t.model_dump()) for t in operations.tenants)
     session.add_all(Staff(**s.model_dump()) for s in operations.staff)
+    session.add_all(
+        Admin(id=a.id, name=a.name, phone=a.phone, trade=a.trade) for a in DEMO_ADMINS
+    )
     # The card's order is the order the file lists it in.
     session.add_all(
         HousekeepingRate(**r.model_dump(), position=i)

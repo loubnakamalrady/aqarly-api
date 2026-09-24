@@ -1,5 +1,6 @@
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -30,6 +31,12 @@ class Settings(BaseSettings):
     # Unset (as on a laptop), everything is open.
     staging_user: str = "staging"
     staging_password: str | None = None
+
+    # How sign-in codes reach people. "screen": the API returns the code so the
+    # app can show it, which is free and fine for development and staging but
+    # lets anyone sign in as anyone. Replace with a texting provider before
+    # real users.
+    login_code_delivery: Literal["screen"] = "screen"
 
     @field_validator("database_url")
     @classmethod

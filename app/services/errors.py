@@ -26,3 +26,11 @@ class Conflict(ServiceError):
 class Invalid(ServiceError):
     """What was sent can't be accepted as it is (too few photos, no reason).
     → 400. FastAPI's own 422 still covers a body of the wrong shape."""
+
+
+class Unauthenticated(ServiceError):
+    """Nobody is signed in, or the session has ended. → 401"""
+
+
+class TooMany(ServiceError):
+    """Asked too often; try again shortly. → 429"""

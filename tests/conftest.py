@@ -6,7 +6,9 @@ against and every run also proves the migrations build the schema.
 """
 
 import os
+import secrets
 from collections.abc import Iterator
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from alembic import command
@@ -61,6 +63,35 @@ def session() -> Iterator[Session]:
         finally:
             db.close()
             transaction.rollback()
+
+
+@pytest.fixture
+def sign_in(session: Session):
+    """Signs in without the code dance: `headers = sign_in("ops", admin_id=…)`,
+    then pass `headers=headers` (or set them on the client). A tenant-portal
+    session is worked out from its phone, so pass `phone=` for tenants."""
+    from app.models import AuthSession
+    from app.services.auth import _hash
+
+    def make(app: str, *, phone: str = "+0000000000", **account: str) -> dict[str, str]:
+        token = secrets.token_urlsafe(16)
+        now = datetime.now(UTC)
+        session.add(
+            AuthSession(
+                token_hash=_hash(token),
+                app=app,
+                phone=phone,
+                created_at=now,
+                expires_at=now + timedelta(hours=1),
+                **account,
+            )
+        )
+        # Committed (to the test's savepoint), so a refused request rolling
+        # back doesn't take the sign-in with it.
+        session.commit()
+        return {"X-Session": token}
+
+    return make
 
 
 @pytest.fixture

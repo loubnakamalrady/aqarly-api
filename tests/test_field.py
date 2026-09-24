@@ -1,6 +1,7 @@
 """The technician field app: worklist order, the repeat-fault flag, and who
 may read a job."""
 
+import re
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -53,6 +54,28 @@ def people_and_places(session: Session) -> None:
     session.flush()
 
 
+@pytest.fixture
+def client(client: TestClient, session: Session, sign_in) -> TestClient:
+    """Each request is signed in as the technician its path names, as the
+    field app would be. A technician who doesn't exist can't sign in, so a
+    request for one goes without a session. A test can still send its own
+    `X-Session` to act as someone else."""
+    signed: dict[str, dict[str, str]] = {}
+    send = client.request
+
+    def request(method, url, **kwargs):
+        match = re.match(r"/technicians/([^/]+)/", str(url))
+        headers = kwargs.pop("headers", None) or {}
+        if match and "X-Session" not in headers and session.get(Staff, match.group(1)):
+            tech = match.group(1)
+            signed.setdefault(tech, sign_in("field", staff_id=tech))
+            headers = {**headers, **signed[tech]}
+        return send(method, url, headers=headers, **kwargs)
+
+    client.request = request  # type: ignore[method-assign]
+    return client
+
+
 # --- Worklist ------------------------------------------------------------------
 
 
@@ -87,10 +110,15 @@ def test_an_empty_worklist(client: TestClient) -> None:
     assert worklist["counts"] == {"left": 0, "urgent": 0, "closed": 0}
 
 
-def test_an_unknown_technician_has_no_worklist(client: TestClient) -> None:
+def test_nobody_signed_in_gets_no_worklist(client: TestClient) -> None:
     response = client.get("/technicians/stf-nobody/worklist")
-    assert response.status_code == 404
-    assert response.json() == {"detail": "No technician stf-nobody"}
+    assert (response.status_code, response.json()) == (401, {"detail": "Sign in to continue."})
+
+
+def test_a_technician_cannot_open_another_technicians_worklist(client: TestClient, sign_in) -> None:
+    haddad = sign_in("field", staff_id="stf-haddad")
+    response = client.get("/technicians/stf-kimani/worklist", headers=haddad)
+    assert (response.status_code, response.json()) == (403, {"detail": "You can only see your own work."})
 
 
 # --- Jobs ----------------------------------------------------------------------
@@ -131,12 +159,9 @@ def test_a_closed_job_stays_readable_by_whoever_closed_it(session: Session, clie
     ("path", "detail"),
     [
         ("/technicians/stf-haddad/jobs/REQ-NOPE", "No job REQ-NOPE"),
-        ("/technicians/stf-nobody/jobs/REQ-A", "No technician stf-nobody"),
     ],
 )
-def test_unknown_jobs_and_technicians_are_404(
-    session: Session, client: TestClient, path: str, detail: str
-) -> None:
+def test_unknown_jobs_are_404(session: Session, client: TestClient, path: str, detail: str) -> None:
     session.add(job("REQ-A", {"submitted": day(1), "assigned": day(1)}))
     session.flush()
 
@@ -323,14 +348,17 @@ def test_only_the_holder_can_act_on_a_job(session: Session, client: TestClient, 
 
 
 @pytest.mark.parametrize(
-    ("job_id", "tech", "detail"),
-    [("REQ-NOPE", "stf-haddad", "No job REQ-NOPE"), ("REQ-A", "stf-nobody", "No technician stf-nobody")],
+    ("job_id", "tech", "status", "detail"),
+    [
+        ("REQ-NOPE", "stf-haddad", 404, "No job REQ-NOPE"),
+        ("REQ-A", "stf-nobody", 401, "Sign in to continue."),
+    ],
 )
-def test_writes_to_unknown_jobs_or_technicians_are_404(
-    session: Session, client: TestClient, job_id: str, tech: str, detail: str
+def test_writes_to_unknown_jobs_or_by_nobody_are_refused(
+    session: Session, client: TestClient, job_id: str, tech: str, status: int, detail: str
 ) -> None:
     add(session, job("REQ-A", STARTED))
 
     response = post(client, "start", job_id=job_id, tech=tech)
 
-    assert (response.status_code, response.json()) == (404, {"detail": detail})
+    assert (response.status_code, response.json()) == (status, {"detail": detail})

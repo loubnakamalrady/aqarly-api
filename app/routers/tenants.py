@@ -1,20 +1,22 @@
-from typing import Annotated
+from fastapi import APIRouter
 
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-
-from app.db import get_session
+from app.deps import SessionDep, SignedIn
 from app.schemas.common import ErrorOut
 from app.schemas.portfolio import TenantAccountOut
 from app.services import portfolio
+from app.services.errors import Forbidden
 
 router = APIRouter(prefix="/tenants", tags=["tenants"])
 
-SessionDep = Annotated[Session, Depends(get_session)]
 
-
-@router.get("/{tenant_id}", response_model=TenantAccountOut, responses={404: {"model": ErrorOut}})
-def get_tenant(tenant_id: str, session: SessionDep) -> TenantAccountOut:
+@router.get(
+    "/{tenant_id}",
+    response_model=TenantAccountOut,
+    responses={code: {"model": ErrorOut} for code in (401, 403, 404)},
+)
+def get_tenant(tenant_id: str, who: SignedIn, session: SessionDep) -> TenantAccountOut:
     """A tenant with the unit they occupy: `getTenantById`. The tenant
-    portal's notifications and history are built from `/requests?tenantId=`."""
+    themselves, or an admin. (A tenant's own record is also in /auth/me.)"""
+    if who.tenant_id != tenant_id and who.kind != "admin":
+        raise Forbidden("You can only see your own account.")
     return portfolio.get_tenant(session, tenant_id)

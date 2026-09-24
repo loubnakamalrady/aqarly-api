@@ -20,6 +20,13 @@ Origin = Literal["ops", "tenant"]
 
 UnitStatus = Literal["occupied", "under-maintenance", "vacant"]
 
+# The four signed-in apps. A session belongs to one of them, and the same
+# phone can be a different account in each (a technician who is also a tenant).
+App = Literal["tenant", "field", "ops", "housekeeping"]
+
+# What ops decided about a tenant's registration.
+RegistrationDecision = Literal["approved", "declined"]
+
 # Maintenance categories are fixed. A housekeeping category is whichever
 # rate-card `service_type` it was booked as, so a request's `category` column
 # is plain text rather than this type (see `ServiceRequest`).

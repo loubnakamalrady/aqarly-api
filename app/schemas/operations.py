@@ -28,7 +28,8 @@ class TenantOut(CamelModel):
     id: str
     name: str
     phone: str
-    email: str
+    # Tenants who registered themselves haven't given one.
+    email: str | None
 
 
 class StaffOut(CamelModel):

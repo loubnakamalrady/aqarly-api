@@ -1,8 +1,16 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from app.routers import field, health, listings, portfolio, rates, requests, staff, tenants
-from app.services.errors import Conflict, Forbidden, Invalid, NotFound, ServiceError
+from app.routers import auth, field, health, listings, portfolio, rates, registrations, requests, staff, tenants
+from app.services.errors import (
+    Conflict,
+    Forbidden,
+    Invalid,
+    NotFound,
+    ServiceError,
+    TooMany,
+    Unauthenticated,
+)
 from app.staging_lock import staging_lock
 
 app = FastAPI(
@@ -15,6 +23,8 @@ app = FastAPI(
 app.middleware("http")(staging_lock)
 
 app.include_router(health.router)
+app.include_router(auth.router)
+app.include_router(registrations.router)
 app.include_router(listings.router)
 app.include_router(field.router)
 app.include_router(requests.router)
@@ -27,9 +37,11 @@ app.include_router(tenants.router)
 # `detail` so the frontend can show it as it is.
 _STATUS: dict[type[ServiceError], int] = {
     Invalid: 400,
+    Unauthenticated: 401,
     Forbidden: 403,
     NotFound: 404,
     Conflict: 409,
+    TooMany: 429,
 }
 
 

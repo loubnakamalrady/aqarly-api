@@ -197,6 +197,22 @@ docker run -p 8010:10000 -e PORT=10000 -e STAGING_PASSWORD=try \
 curl -u staging:try localhost:8010/staff/roster
 ```
 
+## Signing in
+
+Every app signs in with a phone number and a 6-digit code. For now the code
+isn't texted: `POST /auth/code` returns it (`shownCode`) and the app shows it.
+In Swagger: call `/auth/code`, then `/auth/verify` with that code, copy the
+`token`, click **Authorize** and paste it as `X-Session`.
+
+Demo accounts (after `scripts/seed.py`):
+
+| App (`app`) | Phone |
+|---|---|
+| `ops` | `+000 000 0900` |
+| `housekeeping` | `+000 000 0901` |
+| `field` | any staff member's, e.g. `+000 000 0101` (Youssef Haddad) |
+| `tenant` | any tenant's, e.g. `+000 000 0001` (Layla Al Habsi); a new number can register |
+
 ## Migrations
 
 After changing a model in `app/models/`:

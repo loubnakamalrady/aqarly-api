@@ -5,7 +5,7 @@ from typing import Any, get_args
 from sqlalchemy import DateTime, Enum, MetaData, Numeric
 from sqlalchemy.orm import DeclarativeBase
 
-from app.models.enums import Origin, Priority, RequestType, Stage, UnitStatus
+from app.models.enums import App, Origin, Priority, RegistrationDecision, RequestType, Stage, UnitStatus
 
 # Named constraints, so migrations can drop or rename them by a name that is
 # the same on every database rather than one Postgres made up.
@@ -46,6 +46,8 @@ class Base(DeclarativeBase):
         Priority: _checked_text(Priority, "priority"),
         Origin: _checked_text(Origin, "origin"),
         UnitStatus: _checked_text(UnitStatus, "unit_status"),
+        App: _checked_text(App, "app"),
+        RegistrationDecision: _checked_text(RegistrationDecision, "decision"),
         # Every timestamp is an absolute instant: TIMESTAMPTZ, stored in UTC.
         datetime: DateTime(timezone=True),
         # Money is exact decimal, never float.

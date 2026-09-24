@@ -13,7 +13,8 @@ class Tenant(Base):
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     name: Mapped[str] = mapped_column(String(200))
     phone: Mapped[str] = mapped_column(String(32))
-    email: Mapped[str] = mapped_column(String(254))
+    # Tenants who registered themselves haven't given one.
+    email: Mapped[str | None] = mapped_column(String(254))
 
 
 class Staff(Base):

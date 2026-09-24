@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import HousekeepingRate, Property, ServiceRequest, StageEntry, Staff, Tenant, Unit
+from app.models import Admin, HousekeepingRate, Property, ServiceRequest, StageEntry, Staff, Tenant, Unit
 
 T0 = datetime(2026, 8, 1, 9, 0, tzinfo=UTC)
 
@@ -38,6 +38,8 @@ def world(session: Session) -> None:
         Staff(id="stf-castillo", name="Ana Castillo", phone="+000 000 0105", role="housekeeping"),
         HousekeepingRate(service_type="standard-clean", label="Standard clean", price=120, position=0),
         HousekeepingRate(service_type="deep-clean", label="Deep clean", price=320, position=1),
+        Admin(id="adm-ops", name="Property admin", phone="+000 000 0900", trade="maintenance"),
+        Admin(id="adm-hk", name="Housekeeping admin", phone="+000 000 0901", trade="housekeeping"),
     ])
     session.flush()
     session.add_all([
@@ -47,6 +49,19 @@ def world(session: Session) -> None:
         request("REQ-4", ["submitted"], category="standard-clean"),
     ])
     session.commit()
+
+
+@pytest.fixture(autouse=True)
+def as_ops(world: None, client: TestClient, sign_in) -> None:
+    """Every request here is from the ops portal's admin unless it says
+    otherwise (`headers=hk`)."""
+    client.headers.update(sign_in("ops", admin_id="adm-ops"))
+
+
+@pytest.fixture
+def hk(world: None, sign_in) -> dict[str, str]:
+    """The housekeeping portal's admin."""
+    return sign_in("housekeeping", admin_id="adm-hk")
 
 
 def refused(response, status: int, detail: str) -> None:
@@ -68,25 +83,30 @@ def test_raising_maintenance_numbers_it_and_can_assign_it(client: TestClient) ->
     assert [p["name"] for p in body["photos"]] == ["Photo"]  # the one without bytes is dropped
 
 
-def test_a_booking_takes_the_card_price_and_is_never_urgent(client: TestClient) -> None:
-    body = client.post("/requests", json={
+def test_a_booking_takes_the_card_price_and_is_never_urgent(client: TestClient, hk: dict) -> None:
+    body = client.post("/requests", headers=hk, json={
         "unitId": "unit-a", "category": "deep-clean", "priority": "urgent", "summary": "Deep clean",
         "scheduledDate": "2026-09-30", "scheduledSlot": "9AM–1PM", "origin": "tenant",
     }).json()
     assert (body["type"], body["priority"], body["charge"]) == ("housekeeping", "normal", 320)
+    assert body["origin"] == "tenant"  # an admin raising on a tenant's behalf may say so
     assert body["schedule"] == {"date": "2026-09-30", "slot": "9AM–1PM"}
 
 
 @pytest.mark.parametrize(("body", "detail"), [
     ({"unitId": "unit-x", "category": "plumbing", "summary": "x"}, "Unknown unit unit-x"),
     ({"unitId": "unit-a", "category": "plumbing", "summary": "  "}, "A request needs a summary"),
-    ({"unitId": "unit-a", "category": "gardening", "summary": "x"}, "Unknown category gardening"),
-    ({"unitId": "unit-a", "category": "deep-clean", "summary": "x", "scheduledSlot": "1PM–9AM"}, "Unknown time slot 1PM–9AM"),
+    ({"unitId": "unit-a", "category": "plumbing", "summary": "x", "scheduledSlot": "1PM–9AM"}, "Unknown time slot 1PM–9AM"),
     ({"unitId": "unit-a", "category": "plumbing", "summary": "x", "assigneeId": "stf-nobody"}, "Unknown staff member stf-nobody"),
 ])
 def test_raising_refuses_with_a_reason(client: TestClient, body: dict, detail: str) -> None:
     refused(client.post("/requests", json=body), 400, detail)
     assert client.get("/requests/REQ-5").status_code == 404  # nothing half-made
+
+
+def test_an_unknown_service_is_refused_by_name(client: TestClient, hk: dict) -> None:
+    body = {"unitId": "unit-a", "category": "gardening", "summary": "x"}
+    refused(client.post("/requests", json=body, headers=hk), 400, "Unknown category gardening")
 
 
 # --- Assigning, priority, removal ------------------------------------------------
@@ -103,8 +123,8 @@ def test_reassigning_work_in_flight_does_not_send_it_back(client: TestClient) ->
     assert [e["stage"] for e in moved["stageHistory"]] == ["submitted", "assigned", "in-progress"]
 
 
-def test_housekeeping_cannot_be_made_urgent(client: TestClient) -> None:
-    refused(client.post("/requests/priority", json={"ids": ["REQ-4"], "priority": "urgent"}), 400,
+def test_housekeeping_cannot_be_made_urgent(client: TestClient, hk: dict) -> None:
+    refused(client.post("/requests/priority", json={"ids": ["REQ-4"], "priority": "urgent"}, headers=hk), 400,
             "Housekeeping is booked into a slot and has no emergency tier")
     refused(client.post("/requests/priority", json={"ids": ["REQ-1"], "priority": "asap"}), 400, "Unknown priority asap")
     assert client.post("/requests/priority", json={"ids": ["REQ-1"], "priority": "urgent"}).json()[0]["priority"] == "urgent"
@@ -119,10 +139,10 @@ def test_deleting_returns_what_was_removed(client: TestClient, session: Session)
 # --- The rate card ---------------------------------------------------------------
 
 
-def test_a_new_rate_goes_at_the_end_of_the_card(client: TestClient) -> None:
-    rate = client.post("/housekeeping-rates", json={"label": " Window clean ", "price": "95.5"}).json()
+def test_a_new_rate_goes_at_the_end_of_the_card(client: TestClient, hk: dict) -> None:
+    rate = client.post("/housekeeping-rates", json={"label": " Window clean ", "price": "95.5"}, headers=hk).json()
     assert (rate["serviceType"], rate["label"], rate["price"]) == ("window-clean", "Window clean", 96)
-    assert [r["serviceType"] for r in client.get("/housekeeping-rates").json()] == ["standard-clean", "deep-clean", "window-clean"]
+    assert [r["serviceType"] for r in client.get("/housekeeping-rates", headers=hk).json()] == ["standard-clean", "deep-clean", "window-clean"]
 
 
 @pytest.mark.parametrize(("body", "detail"), [
@@ -132,26 +152,26 @@ def test_a_new_rate_goes_at_the_end_of_the_card(client: TestClient) -> None:
     ({"label": "deep clean", "price": 10}, "deep clean is already a service"),
     ({"label": "Plumbing", "price": 10}, "Plumbing is already a service"),
 ])
-def test_adding_a_rate_refuses_with_a_reason(client: TestClient, body: dict, detail: str) -> None:
-    refused(client.post("/housekeeping-rates", json=body), 400, detail)
+def test_adding_a_rate_refuses_with_a_reason(client: TestClient, hk: dict, body: dict, detail: str) -> None:
+    refused(client.post("/housekeeping-rates", headers=hk, json=body), 400, detail)
 
 
-def test_a_rate_with_open_bookings_cannot_leave_the_card(client: TestClient) -> None:
-    refused(client.delete("/housekeeping-rates/standard-clean"), 409, "1 open booking uses this service — close them first")
-    refused(client.delete("/housekeeping-rates/gardening"), 404, "Unknown service gardening")
+def test_a_rate_with_open_bookings_cannot_leave_the_card(client: TestClient, hk: dict) -> None:
+    refused(client.delete("/housekeeping-rates/standard-clean", headers=hk), 409, "1 open booking uses this service — close them first")
+    refused(client.delete("/housekeeping-rates/gardening", headers=hk), 404, "Unknown service gardening")
 
 
-def test_a_retired_rate_leaves_the_card_but_keeps_its_name(client: TestClient) -> None:
-    retired = client.delete("/housekeeping-rates/deep-clean").json()
+def test_a_retired_rate_leaves_the_card_but_keeps_its_name(client: TestClient, hk: dict) -> None:
+    retired = client.delete("/housekeeping-rates/deep-clean", headers=hk).json()
     assert retired["retiredAt"] is not None
-    assert [r["serviceType"] for r in client.get("/housekeeping-rates").json()] == ["standard-clean"]
-    everything = client.get("/housekeeping-rates?includeRetired=true").json()
+    assert [r["serviceType"] for r in client.get("/housekeeping-rates", headers=hk).json()] == ["standard-clean"]
+    everything = client.get("/housekeeping-rates?includeRetired=true", headers=hk).json()
     assert [(r["serviceType"], r["label"]) for r in everything][1] == ("deep-clean", "Deep clean")
     # It can't be booked any more…
-    refused(client.post("/requests", json={"unitId": "unit-a", "category": "deep-clean", "summary": "x"}), 400,
+    refused(client.post("/requests", json={"unitId": "unit-a", "category": "deep-clean", "summary": "x"}, headers=hk), 400,
             "Deep clean is no longer on the rate card")
     # …and adding it again brings it back, at the end, with the new price.
-    back = client.post("/housekeeping-rates", json={"label": "Deep clean", "price": 350}).json()
+    back = client.post("/housekeeping-rates", json={"label": "Deep clean", "price": 350}, headers=hk).json()
     assert (back["price"], back["retiredAt"]) == (350, None)
 
 
@@ -211,7 +231,7 @@ def test_candidates_rank_by_capacity_then_building_then_load(client: TestClient)
 
 def test_the_queue_filters_narrow_together(client: TestClient) -> None:
     ids = lambda q: [r["id"] for r in client.get(f"/requests{q}").json()]
-    assert ids("?assigneeId=unassigned") == ["REQ-1", "REQ-4"]
+    assert ids("?assigneeId=unassigned") == ["REQ-1"]  # REQ-4 is housekeeping's
     assert ids("?type=maintenance&open=true") == ["REQ-1", "REQ-2"]
     assert ids("?search=HADDAD") == ["REQ-2"]
     assert ids("?search=100%25") == []  # a % in the search is text, not a wildcard
@@ -219,7 +239,8 @@ def test_the_queue_filters_narrow_together(client: TestClient) -> None:
     assert ids("?sort=newest&type=maintenance") == ["REQ-3", "REQ-2", "REQ-1"]
 
 
-def test_the_dashboard_counts_one_trade(client: TestClient) -> None:
+def test_the_dashboard_counts_one_trade(client: TestClient, hk: dict) -> None:
     stats = client.get("/reports/dashboard").json()
     assert (stats["open"], stats["unassigned"], stats["inProgress"], stats["closed"]) == (2, 1, 1, 1)
-    assert client.get("/reports/dashboard?type=housekeeping").json()["open"] == 1
+    refused(client.get("/reports/dashboard?type=housekeeping"), 403, "This portal manages maintenance only.")
+    assert client.get("/reports/dashboard", headers=hk).json()["open"] == 1
