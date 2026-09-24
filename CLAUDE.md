@@ -237,6 +237,6 @@ old-versus-new core comparison matched 906 reads and all 18 refusal messages.
 
 8. Photos to object storage (MinIO locally, R2/S3 deployed).
 9. Auth. **In progress:** the API side is done (sign-in, registration, every
-   route guarded); next the tenant portal, the field app, then ops and
-   housekeeping, which each need their sign-in screens and to send the session.
+   route guarded), and the tenant portal and field app have their sign-in
+   screens. Ops and housekeeping are next (plus ops' registrations list).
 10. Deploy (Neon, Railway/Render/Fly), and add CI: tests and the `openapi.json` export on every push.
