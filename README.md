@@ -104,24 +104,36 @@ docker compose down
 
 ## Staging
 
-A shared copy of everything, online, for free: the API on **Render** (in a
-Docker container), the five frontends on **Render**, and Postgres on **Neon**.
-Both are free plans with no credit card. Each repo has a `render.yaml` that
-describes its services; every push to the `staging` branch redeploys.
+A shared copy of everything, online, for free, and awake all the time:
 
-What free costs: an app that gets no traffic for 15 minutes goes to sleep, and
-the next visit takes about a minute to wake it (the frontend, then the API),
-then it's fast. The free plan includes 750 running hours and 500 build minutes
-a month across all the services; light staging use fits.
+| Part | Host | Why there |
+|---|---|---|
+| The API | **Render**, from this repo's `Dockerfile` | Runs a container; kept awake by a ping (below) |
+| Postgres | **Neon** | Pauses when idle but wakes in under a second |
+| The five frontends | **Vercel** | Made for Next.js; the free plan never sleeps |
 
-**The API is locked; the apps are not.** There is no sign-in yet (roadmap
-Phase 9), so the API and Swagger ask for one shared username and password
-(`staging` and the password you choose). The five apps are open to anyone
-with the link, so you can share them without a password: they send the
-password to the API themselves, server-side, and ask search engines not to
-list them. Anyone with an app link can change the demo data; reset it with
-the seed script. Locally nothing is locked, because `STAGING_PASSWORD` isn't
-set.
+All three are free plans. Every push to the `staging` branch of either repo
+redeploys what changed.
+
+**Keeping the API awake.** Render's free plan puts a service to sleep after
+15 minutes without traffic, and waking it takes a minute or more. An uptime
+monitor (UptimeRobot) calls `/health` every 5 minutes, so it never gets the
+chance. That's allowed on the free plan, but only for one service: the plan
+has 750 running hours a month across all services, and one service awake all
+month uses ~730. That's why the frontends are on Vercel, not Render.
+
+**The API is locked; the apps are not.** The API and Swagger ask for one
+shared username and password (`staging` and the password you choose), on top
+of the apps' own sign-in (see "Signing in"). The five apps are open to anyone
+with the link, so you can share them: they send the password to the API
+themselves, server-side, and ask search engines not to list them. Anyone with
+an app link can sign in with the demo numbers and change the demo data; reset
+it with the seed script. Locally nothing is locked, because
+`STAGING_PASSWORD` isn't set.
+
+**One limit on Vercel's free plan:** a form can post at most 4.5 MB. Photos
+still travel inside the form (until Phase 8 moves them to file storage), so a
+job closed with several full-size phone photos can be refused there.
 
 ### One-time setup
 
@@ -133,15 +145,17 @@ set.
 
 2. **Database (Neon).** Sign up at <https://neon.com> with GitHub, create a
    project in **AWS Europe Central (Frankfurt)**, and copy its connection
-   string (`postgresql://…neon.tech/…?sslmode=require`). Use it as it is.
+   string (`postgresql://…neon.tech/…?sslmode=require`, the one *without*
+   `-pooler`). Use it as it is.
 
 3. **Branches.** In each repo, create a `staging` branch from `main` and push
    it (`git switch -c staging && git push -u origin staging`). Staging deploys
    from this branch only, so `main` can move without touching it.
 
 4. **The API (Render).** Sign up at <https://render.com> with GitHub, and give
-   it access to this repo. Then **New → Blueprint**, pick this repo and the
-   `staging` branch. Render reads `render.yaml` and asks for:
+   it access to this repo. Then **New → Web Service**, pick this repo, branch
+   `staging`, runtime **Docker**, region **Frankfurt**, plan **Free**, health
+   check path `/health` (these match `render.yaml`), and add:
    - `DATABASE_URL`: the Neon connection string
    - `STAGING_PASSWORD`: the password from step 1
 
@@ -150,43 +164,67 @@ set.
    has no pre-deploy step, so the container does it.) Note its address, e.g.
    `https://aqarly-api-stg.onrender.com`.
 
-5. **Load the demo data** into staging, from your laptop (the frontend repo
-   must be next to this one, as locally):
+5. **Load the demo data** into staging, from your laptop, in this folder (the
+   frontend repo must be next to this one, as locally). Put the connection
+   string in `.neon-url` (git-ignored) rather than typing it into a command:
 
    ```bash
-   DATABASE_URL='<the Neon connection string>' uv run python scripts/seed.py
+   touch .neon-url && open -e .neon-url     # paste it, save, close
+   DATABASE_URL="$(cat .neon-url)" uv run python scripts/seed.py
    ```
 
-   Run it again any time to reset staging, just like locally.
+   Run the second line again any time to reset staging, just like locally.
+   It also creates the demo admins, so ops and housekeeping can sign in.
 
-6. **The frontends (Render).** Give Render access to the frontend repo too,
-   then **New → Blueprint** on it, `staging` branch. It creates five services
-   and asks, for each, for:
-   - `API_URL`: the API's address from step 4 (no trailing slash)
-   - `STAGING_PASSWORD`: the same password (the apps use it to reach the API;
-     visitors never need it)
+6. **Keep the API awake (UptimeRobot).** Sign up at <https://uptimerobot.com>
+   (free), **New monitor** → type **HTTP(s)**, URL
+   `https://aqarly-api-stg.onrender.com/health`, interval **5 minutes**. It
+   also emails you if the API goes down.
+
+7. **The frontends (Vercel).** Sign up at <https://vercel.com> with GitHub
+   (the free **Hobby** plan) and give it access to the frontend repo. Then,
+   once per app (ops, tenant, housekeeping, field, and web if you want the
+   marketing site): **Add New → Project**, import the frontend repo, and:
+   - **Project name**: e.g. `aqarly-ops-stg`
+   - **Root Directory**: **Edit** → `apps/ops` (the app's folder). Vercel
+     sees the pnpm workspace and installs from the repo root itself; leave
+     the build and install commands as they are.
+   - **Environment Variables**:
+     - `API_URL`: the API's address from step 4 (no trailing slash)
+     - `STAGING_PASSWORD`: the same password (the apps use it to reach the
+       API; visitors never need it)
+   - **Deploy.** Then, in the project's **Settings → Environments →
+     Production**, set the branch to `staging`, so that branch is what the
+     main address shows. Redeploy once from **Deployments** after changing it.
+
+   Each app's `vercel.json` runs its server code in Frankfurt (`fra1`), next
+   to the API and the database; Vercel's default is Washington, which would
+   add an ocean to every API call.
 
 ### Addresses
 
 | What | Where |
 |---|---|
 | Swagger | `https://aqarly-api-stg.onrender.com/docs` |
-| Marketing site | `https://aqarly-web-stg.onrender.com` |
-| Ops portal | `https://aqarly-ops-stg.onrender.com` |
-| Tenant portal | `https://aqarly-tenant-stg.onrender.com` |
-| Housekeeping portal | `https://aqarly-housekeeping-stg.onrender.com` |
-| Field app | `https://aqarly-field-stg.onrender.com` |
+| Ops portal | `https://aqarly-ops-stg.vercel.app` |
+| Tenant portal | `https://aqarly-tenant-stg.vercel.app` |
+| Housekeeping portal | `https://aqarly-housekeeping-stg.vercel.app` |
+| Field app | `https://aqarly-field-stg.vercel.app` |
+| Marketing site | `https://aqarly-web-stg.vercel.app` (if created) |
 
-Render adds a suffix if a name is taken; the dashboard shows the real one.
-A custom domain (`dev.aqarlystg.…`) can be added per service later under
-**Settings → Custom Domains**: one DNS record each, HTTPS included.
+Vercel adds a suffix if a name is taken; each project's page shows the real
+address. A custom domain can be added per project later under **Settings →
+Domains**, HTTPS included.
 
 ### Deploying
 
-Merge into `staging` and push. Render rebuilds only what changed: the API on
-any push to this repo; a frontend when its app or the shared packages change.
-Watch progress and logs in the Render dashboard. The API applies its
-migrations as it starts; if one fails, the previous version keeps running.
+Merge into `staging` and push. Render redeploys the API on any push to this
+repo, and applies its migrations as it starts; if one fails, the previous
+version keeps running. Vercel builds each frontend project on a push to the
+frontend repo's `staging` branch; other branches get preview deployments at
+their own addresses. Before pushing the frontend, run `pnpm --filter <app>
+build` for the apps you touched: `next dev` doesn't catch everything the
+production build refuses.
 
 ### Trying it locally, the way staging runs
 

@@ -151,17 +151,22 @@ autogenerate won't see its table.
 
 ## Staging
 
-Render (free) runs this API from the `Dockerfile` and the five frontends,
-Neon (free) runs Postgres; `render.yaml` in each repo describes the services
-and a push to the `staging` branch deploys. The API container runs `alembic
-upgrade head` as it starts (the free plan has no pre-deploy step). README → "Staging" has the setup steps.
+Render (free) runs this API from the `Dockerfile` (`render.yaml`), Neon
+(free) runs Postgres, and Vercel (free) runs the five frontends (a
+`vercel.json` per app pins them to Frankfurt). A push to the `staging` branch
+deploys. The API container runs `alembic upgrade head` as it starts (the free
+plan has no pre-deploy step). An UptimeRobot monitor on `/health` keeps the
+API awake: the user wants it always up (it's on their CV), and Render's 750
+free hours a month cover one always-on service, not six, which is why the
+frontends left Render. Keep `/health` open and cheap. README → "Staging" has
+the setup steps.
 
 `app/staging_lock.py` puts HTTP Basic auth in front of everything except
 `/health` when `STAGING_PASSWORD` is set. The frontends are deliberately open
 (the user wants shareable links; anyone with one can change demo data): they
 send the credentials with every API call (`@aqarly/core/staging`) and serve
-`X-Robots-Tag: noindex` when `STAGING_PASSWORD` is set. It stands in until
-Phase 9's real sign-in; it is not user accounts. `DATABASE_URL` may be written `postgresql://…` as hosts give it:
+`X-Robots-Tag: noindex` when `STAGING_PASSWORD` is set. It is not user
+accounts; Phase 9's sign-in sits on top of it. `DATABASE_URL` may be written `postgresql://…` as hosts give it:
 settings rewrites it to the psycopg driver.
 
 ## Sign-in (Phase 9)
@@ -236,7 +241,8 @@ database). Each was checked against the frontend's own functions: the final
 old-versus-new core comparison matched 906 reads and all 18 refusal messages.
 
 8. Photos to object storage (MinIO locally, R2/S3 deployed).
-9. Auth. **In progress:** the API side is done (sign-in, registration, every
-   route guarded), and the tenant portal and field app have their sign-in
-   screens. Ops and housekeeping are next (plus ops' registrations list).
+9. Auth. **Done, codes shown on screen:** the API side (sign-in,
+   registration, every route guarded) and all four portals' sign-in screens,
+   plus ops' registrations list. Left: a texting provider in place of
+   `login_code_delivery = "screen"` before real users.
 10. Deploy (Neon, Railway/Render/Fly), and add CI: tests and the `openapi.json` export on every push.
