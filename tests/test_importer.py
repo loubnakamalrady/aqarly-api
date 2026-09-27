@@ -136,3 +136,25 @@ def test_a_unit_with_a_tenant_cant_be_made_vacant(session: Session):
     run(session, "tenants", "name,phone,building,unit", "Sara Nasser,+000 000 3001,Sunset Towers,0101")
     with pytest.raises(ImportRefused, match="has a tenant, so it can't be vacant"):
         run(session, "units", "building,unit,status", "Sunset Towers,0101,vacant")
+
+
+def test_clearing_empties_the_operation_and_keeps_the_rate_card(session: Session):
+    from app.importer import clear_operations
+    from app.models import HousekeepingRate
+
+    session.add(HousekeepingRate(service_type="standard-clean", label="Standard clean", price=120, position=0))
+    units(session)
+    run(session, "staff", "name,phone,trade", "Hassan Ali,+966 50 000 3101,maintenance")
+
+    counts = clear_operations(session)
+
+    assert counts["units"] == 2 and counts["staff"] == 1
+    assert session.scalar(select(func.count()).select_from(Unit)) == 0
+    assert session.scalar(select(func.count()).select_from(HousekeepingRate)) == 1
+
+
+def test_a_phone_needs_its_country_code(session: Session):
+    with pytest.raises(ImportRefused) as refused:
+        run(session, "staff", "name,phone,trade", "Hassan Ali,050 123 4567,maintenance")
+
+    assert refused.value.problems == ["Row 2: '050 123 4567' needs its country code, e.g. +966 50 123 4567"]

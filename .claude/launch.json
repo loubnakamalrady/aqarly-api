@@ -4,8 +4,61 @@
     {
       "name": "api",
       "runtimeExecutable": "uv",
-      "runtimeArgs": ["run", "uvicorn", "app.main:app", "--reload"],
+      "runtimeArgs": [
+        "run",
+        "uvicorn",
+        "app.main:app",
+        "--reload"
+      ],
       "port": 8000
+    },
+    {
+      "name": "ops",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--dir",
+        "../aqarly",
+        "--filter",
+        "@aqarly/ops",
+        "dev"
+      ],
+      "port": 3001
+    },
+    {
+      "name": "tenant",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--dir",
+        "../aqarly",
+        "--filter",
+        "@aqarly/tenant",
+        "dev"
+      ],
+      "port": 3002
+    },
+    {
+      "name": "housekeeping",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--dir",
+        "../aqarly",
+        "--filter",
+        "@aqarly/housekeeping",
+        "dev"
+      ],
+      "port": 3003
+    },
+    {
+      "name": "field",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--dir",
+        "../aqarly",
+        "--filter",
+        "@aqarly/field",
+        "dev"
+      ],
+      "port": 3004
     }
   ]
 }

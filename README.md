@@ -62,13 +62,25 @@ tenants, because a tenant's row names their building and unit.
 | `staff` | name, phone, trade (`maintenance` / `housekeeping`) | phone |
 | `admins` | name, phone, portal (`ops` / `housekeeping`) | phone and portal |
 
-It adds what's new and updates what matches; it never deletes, and a blank
+Phones must start with their country code (`+966 50 123 4567`): sign-in puts
+the country the person picks in front of what they type. It adds what's new
+and updates what matches; it never deletes, and a blank
 cell leaves that field as it is. A row with building and unit moves the
 tenant in, replacing whoever lived there. Any problem (a bad phone, a unit that
 doesn't exist, a misspelt column) refuses the whole file with the row it's on,
 and nothing is changed. The seed script still wipes everything, imports
 included, so don't run it on data you imported. To import into staging, put
 `DATABASE_URL="$(cat .neon-url)"` in front, as with the seed.
+
+To start from nothing but your own data, empty the operation first: every
+building and unit, tenant, member of staff, admin, request, registration and
+sign-in goes; the housekeeping rate card and the marketing listings stay. It
+asks you to type `clear`. Nobody can sign in afterwards until you import
+people, so import units, tenants, staff and admins straight after:
+
+```bash
+uv run python scripts/clear_operations.py
+```
 
 Run the API, reloading on code changes:
 

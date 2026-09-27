@@ -24,10 +24,10 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Literal, get_args
 
-from sqlalchemy import select
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
-from app.models import Admin, Property, Staff, Tenant, Unit
+from app.models import Admin, Base, Property, Staff, Tenant, Unit
 from app.models.enums import RequestType, UnitStatus
 from app.services.admin import _staff_id
 from app.services.auth import _tenant_id
@@ -48,6 +48,22 @@ COLUMNS: dict[Kind, tuple[tuple[str, ...], tuple[str, ...]]] = {
 PORTALS: dict[str, RequestType] = {"ops": "maintenance", "housekeeping": "housekeeping"}
 TRADES: tuple[str, ...] = get_args(RequestType)
 STATUSES: tuple[str, ...] = get_args(UnitStatus)
+
+
+# What clearing keeps: the rate card (housekeeping's prices, not people) and
+# the marketing site's listings. Everything else is the operation's own data.
+KEPT_TABLES = ("housekeeping_rates", "listings")
+
+
+def clear_operations(session: Session) -> dict[str, int]:
+    """Empties buildings, units, tenants, staff, admins, requests, sign-ins and
+    registrations, ready for real data to be imported in their place. Returns
+    how many rows each table had. The caller commits; rolling back puts every
+    row back (TRUNCATE is transactional in Postgres)."""
+    tables = [t for t in Base.metadata.sorted_tables if t.name not in KEPT_TABLES]
+    counts = {t.name: session.scalar(select(func.count()).select_from(t)) or 0 for t in tables}
+    session.execute(text("TRUNCATE " + ", ".join(f'"{t.name}"' for t in tables)))
+    return counts
 
 
 class ImportRefused(Exception):
@@ -106,10 +122,14 @@ def _digits(phone: str) -> str:
 
 
 def _phone(value: str) -> str:
-    """As written, once it's something that can be dialled (the roster's rule)."""
+    """As written, once it's something that can be dialled, with its country
+    code: sign-in puts the country code the person picks in front of what
+    they type, so "0501234567" alone would never match anyone."""
     digits = _digits(value)
     if not re.fullmatch(r"\+?[0-9\s()-]+", value) or not 7 <= len(digits) <= 15:
         raise RowProblem(f"'{value}' isn't a phone number")
+    if not value.startswith("+"):
+        raise RowProblem(f"'{value}' needs its country code, e.g. +966 50 123 4567")
     return value
 
 

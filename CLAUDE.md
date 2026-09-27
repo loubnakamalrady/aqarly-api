@@ -221,7 +221,11 @@ field. New ids follow the seed's shapes (`prop-<name>`, `unit-<initials>-<label>
 `ten-`/`stf-`/`adm-<last name>`). Every row is checked and any problem refuses
 the file with its row number; the script commits only a clean run
 (`--dry-run` never does). Unknown columns are refused, so typos don't vanish.
-Examples in `scripts/import-examples/`. The seed script wipes imported data too.
+Phones must carry their country code (sign-in prefixes the picked country).
+Examples in `scripts/import-examples/`. `scripts/clear_operations.py`
+(`clear_operations`) empties everything but `housekeeping_rates` and
+`listings` before a real import, after typing `clear`. The seed script wipes
+imported data too.
 
 ## Tests
 
