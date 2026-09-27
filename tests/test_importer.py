@@ -158,3 +158,10 @@ def test_a_phone_needs_its_country_code(session: Session):
         run(session, "staff", "name,phone,trade", "Hassan Ali,050 123 4567,maintenance")
 
     assert refused.value.problems == ["Row 2: '050 123 4567' needs its country code, e.g. +966 50 123 4567"]
+
+
+def test_a_phone_without_its_plus_is_taken_as_international(session: Session):
+    # What a spreadsheet leaves of +966 55 781 5947, and the 00 way of writing it.
+    run(session, "staff", "name,phone,trade", "Hassan Ali,966557815947,maintenance", "Mei Lin,00966557815948,housekeeping")
+
+    assert sorted(session.scalars(select(Staff.phone))) == ["+966557815947", "+966557815948"]

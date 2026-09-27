@@ -122,15 +122,22 @@ def _digits(phone: str) -> str:
 
 
 def _phone(value: str) -> str:
-    """As written, once it's something that can be dialled, with its country
-    code: sign-in puts the country code the person picks in front of what
-    they type, so "0501234567" alone would never match anyone."""
+    """With its country code, once it's something that can be dialled: sign-in
+    puts the country the person picks in front of what they type, so a local
+    "0501234567" would never match anyone. Spreadsheets drop the "+" (they
+    read +966… as a number), so digits that start with a country code, or
+    with 00, count as international too."""
     digits = _digits(value)
+    if not value.startswith("+") and digits.startswith("00"):
+        digits = digits[2:]
+    # 7–15 digits, as sign-in requires (services/auth.normalize_phone).
     if not re.fullmatch(r"\+?[0-9\s()-]+", value) or not 7 <= len(digits) <= 15:
         raise RowProblem(f"'{value}' isn't a phone number")
-    if not value.startswith("+"):
+    if value.startswith("+"):
+        return value
+    if digits.startswith("0"):
         raise RowProblem(f"'{value}' needs its country code, e.g. +966 50 123 4567")
-    return value
+    return "+" + digits
 
 
 def _count(value: str | None, column: str) -> int | None:
