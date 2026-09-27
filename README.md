@@ -41,6 +41,35 @@ is refused and the database is left as it was.
 uv run python scripts/seed.py
 ```
 
+Import real data from a spreadsheet, instead of (or on top of) the demo data:
+buildings and units, tenants, staff, or the admins who can sign in to ops and
+housekeeping. Save the sheet as CSV (Excel or Numbers: Export → CSV; Google
+Sheets: File → Download → CSV), then:
+
+```bash
+uv run python scripts/import_data.py units my-units.csv --dry-run   # preview
+uv run python scripts/import_data.py units my-units.csv             # save
+```
+
+The kinds are `units`, `tenants`, `staff` and `admins`, one file each;
+`scripts/import-examples/` has a file of each to copy. Import units before
+tenants, because a tenant's row names their building and unit.
+
+| File | Columns | Matched by |
+|---|---|---|
+| `units` | building, address, unit, bedrooms, bathrooms, status | building name, then unit label |
+| `tenants` | name, phone, email, building, unit | phone |
+| `staff` | name, phone, trade (`maintenance` / `housekeeping`) | phone |
+| `admins` | name, phone, portal (`ops` / `housekeeping`) | phone and portal |
+
+It adds what's new and updates what matches; it never deletes, and a blank
+cell leaves that field as it is. A row with building and unit moves the
+tenant in, replacing whoever lived there. Any problem (a bad phone, a unit that
+doesn't exist, a misspelt column) refuses the whole file with the row it's on,
+and nothing is changed. The seed script still wipes everything, imports
+included, so don't run it on data you imported. To import into staging, put
+`DATABASE_URL="$(cat .neon-url)"` in front, as with the seed.
+
 Run the API, reloading on code changes:
 
 ```bash

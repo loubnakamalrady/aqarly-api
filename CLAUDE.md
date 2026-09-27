@@ -210,6 +210,19 @@ seed until it's mapped here. After loading it compares the computed
 `stage`/`created_at` against the JSON's stored ones and refuses on any
 difference. When a model gains a column, map it in `app/seed.py` too.
 
+## Import
+
+`app/importer.py` (run by `scripts/import_data.py <kind> <file.csv>`, the user
+chose a script over an upload page) loads real buildings and units, tenants,
+staff and admins from CSV, one kind per file. It adds and updates, never
+deletes: records are matched by what people call them (building name, unit
+label, phone digits, phone + portal for admins), and a blank cell keeps the
+field. New ids follow the seed's shapes (`prop-<name>`, `unit-<initials>-<label>`,
+`ten-`/`stf-`/`adm-<last name>`). Every row is checked and any problem refuses
+the file with its row number; the script commits only a clean run
+(`--dry-run` never does). Unknown columns are refused, so typos don't vanish.
+Examples in `scripts/import-examples/`. The seed script wipes imported data too.
+
 ## Tests
 
 `tests/conftest.py` recreates `<db>_test` from the migrations on every run,
