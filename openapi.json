@@ -1593,7 +1593,7 @@
           "requests"
         ],
         "summary": "Create Request",
-        "description": "Raise a request: `createRequest`. An admin raises their own trade's; a\ntenant raises for their own home, unassigned and marked as theirs.",
+        "description": "Raise a request: `createRequest`. An admin raises their own trade's; a\ntenant raises for their own home, marked as theirs, standard priority and\nunassigned: how urgent it is and who does it are ops's call.",
         "operationId": "create_request_requests_post",
         "security": [
           {

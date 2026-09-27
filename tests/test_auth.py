@@ -195,9 +195,11 @@ def test_a_tenant_raises_requests_for_their_own_home_only(client: TestClient) ->
 
     body = client.post("/requests", headers=layla, json={
         "unitId": "unit-a", "category": "plumbing", "summary": "Tap drips", "assigneeId": "stf-haddad", "origin": "ops",
+        "priority": "urgent",
     }).json()
-    # Marked as theirs and left for ops to assign, whatever was sent.
-    assert (body["origin"], body["assigneeId"], body["stage"]) == ("tenant", None, "submitted")
+    # Marked as theirs, standard, and left for ops to prioritise and assign,
+    # whatever was sent.
+    assert (body["origin"], body["priority"], body["assigneeId"], body["stage"]) == ("tenant", "normal", None, "submitted")
 
 
 def test_a_tenant_can_read_the_rate_card_but_not_change_it(client: TestClient) -> None:

@@ -93,7 +93,8 @@ def assignment_candidates(request_id: str, who: AdminPrincipal, session: Session
 @router.post("", response_model=EnrichedRequestOut, status_code=status.HTTP_201_CREATED, responses=_REFUSALS)
 def create_request(body: NewRequestIn, who: SignedIn, session: SessionDep) -> EnrichedRequestOut:
     """Raise a request: `createRequest`. An admin raises their own trade's; a
-    tenant raises for their own home, unassigned and marked as theirs."""
+    tenant raises for their own home, marked as theirs, standard priority and
+    unassigned: how urgent it is and who does it are ops's call."""
     if _admin_or_tenant(who) == "admin":
         trade = "maintenance" if body.category in MAINTENANCE_CATEGORIES else "housekeeping"
         if trade != who.trade:
@@ -102,7 +103,7 @@ def create_request(body: NewRequestIn, who: SignedIn, session: SessionDep) -> En
         home = portfolio.get_tenant(session, who.tenant_id).unit  # type: ignore[arg-type]
         if home is None or body.unit_id != home.id:
             raise Forbidden("You can only raise requests for your own home.")
-        body = body.model_copy(update={"origin": "tenant", "assignee_id": None})
+        body = body.model_copy(update={"origin": "tenant", "assignee_id": None, "priority": "normal"})
 
     request = admin.create_request(session, body, datetime.now(UTC))
     session.commit()

@@ -189,7 +189,7 @@ them the unit's tenant, replacing whoever was there (the user chose approval).
   (`SignedIn`, `AdminPrincipal`, `OpsPrincipal`, `TenantPrincipal`,
   `StaffPrincipal`). Admins work in their own trade only (`own_trade`); tenants
   see their own requests and raise them for their own home (marked `tenant`,
-  unassigned); technicians only their own `/technicians/{id}/…`. Only
+  standard priority, unassigned: ops decides both); technicians only their own `/technicians/{id}/…`. Only
   `/health`, `/listings`, `/auth/code`, `/auth/verify` and `/auth/logout`
   are open. A new route must pick one.
 - A tenant-portal session is worked out from its phone on every request, so
