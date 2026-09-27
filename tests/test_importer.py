@@ -165,3 +165,11 @@ def test_a_phone_without_its_plus_is_taken_as_international(session: Session):
     run(session, "staff", "name,phone,trade", "Hassan Ali,966557815947,maintenance", "Mei Lin,00966557815948,housekeeping")
 
     assert sorted(session.scalars(select(Staff.phone))) == ["+966557815947", "+966557815948"]
+
+
+def test_a_leading_unit_is_dropped_from_labels(session: Session):
+    run(session, "units", "building,address,unit,bedrooms,bathrooms", "Mushrifah 1,Mushrifah,Unit 10,2,1")
+    run(session, "tenants", "name,phone,building,unit", "Sara Nasser,+966 50 000 3001,Mushrifah 1,unit 10")
+
+    unit = session.scalars(select(Unit)).one()
+    assert (unit.id, unit.label, unit.tenant_id) == ("unit-m1-10", "10", "ten-nasser")

@@ -148,6 +148,17 @@ def _count(value: str | None, column: str) -> int | None:
     return int(value)
 
 
+def _label(value: str | None) -> str | None:
+    """A unit's label without a leading "Unit" ("Unit 4", "unit #4" → "4"):
+    the apps already say "Unit" in front of every label."""
+    if value is None:
+        return None
+    label = re.sub(r"^unit\b[\s#:.-]*", "", value, flags=re.IGNORECASE)
+    if not label:
+        raise RowProblem(f"'{value}' needs a unit number or name")
+    return label
+
+
 def _slug(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
 
@@ -222,7 +233,7 @@ class _Importer:
         name = row["building"]
         if name is None:
             raise RowProblem("building is empty")
-        address, label = row.get("address"), row.get("unit")
+        address, label = row.get("address"), _label(row.get("unit"))
         bedrooms, bathrooms = _count(row.get("bedrooms"), "bedrooms"), _count(row.get("bathrooms"), "bathrooms")
         status = row.get("status")
         if status is not None and status not in STATUSES:
@@ -290,7 +301,7 @@ class _Importer:
         phone = _phone(raw_phone)
         if email is not None and not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
             raise RowProblem(f"'{email}' isn't an email address")
-        home = self._find_unit(row.get("building"), row.get("unit"))
+        home = self._find_unit(row.get("building"), _label(row.get("unit")))
         self._once(("tenant", _digits(phone)), f"The phone {phone}")
 
         tenant = self.tenants.get(_digits(phone))
