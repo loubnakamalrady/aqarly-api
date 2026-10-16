@@ -125,7 +125,7 @@ def test_reassigning_work_in_flight_does_not_send_it_back(client: TestClient) ->
 
 def test_housekeeping_cannot_be_made_urgent(client: TestClient, hk: dict) -> None:
     refused(client.post("/requests/priority", json={"ids": ["REQ-4"], "priority": "urgent"}, headers=hk), 400,
-            "Housekeeping is booked into a slot and has no emergency tier")
+            "Housekeeping can't be marked as an emergency")
     refused(client.post("/requests/priority", json={"ids": ["REQ-1"], "priority": "asap"}), 400, "Unknown priority asap")
     assert client.post("/requests/priority", json={"ids": ["REQ-1"], "priority": "urgent"}).json()[0]["priority"] == "urgent"
 
@@ -157,7 +157,7 @@ def test_adding_a_rate_refuses_with_a_reason(client: TestClient, hk: dict, body:
 
 
 def test_a_rate_with_open_bookings_cannot_leave_the_card(client: TestClient, hk: dict) -> None:
-    refused(client.delete("/housekeeping-rates/standard-clean", headers=hk), 409, "1 open booking uses this service — close them first")
+    refused(client.delete("/housekeeping-rates/standard-clean", headers=hk), 409, "1 open booking uses this service. Close them first.")
     refused(client.delete("/housekeeping-rates/gardening", headers=hk), 404, "Unknown service gardening")
 
 
@@ -201,7 +201,7 @@ def test_updating_staff_keeps_their_photo_unless_given_one(client: TestClient, s
 
 
 def test_staff_holding_open_work_cannot_leave(client: TestClient) -> None:
-    refused(client.delete("/staff/stf-haddad"), 409, "1 open request is still assigned — reassign it first")
+    refused(client.delete("/staff/stf-haddad"), 409, "1 open request is still assigned. Reassign it first.")
 
 
 def test_retired_staff_leave_the_roster_but_keep_their_closed_work(client: TestClient) -> None:

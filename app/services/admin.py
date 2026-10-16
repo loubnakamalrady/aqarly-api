@@ -138,7 +138,7 @@ def set_priority(session: Session, ids: Sequence[str], priority: str) -> list[Se
     requests = _locked(session, ids)
     if priority == "urgent" and any(r.type == "housekeeping" for r in requests):
         # The frontend never checked this; the database refuses it.
-        raise Invalid("Housekeeping is booked into a slot and has no emergency tier")
+        raise Invalid("Housekeeping can't be marked as an emergency")
     for request in requests:
         request.priority = priority
     return list(requests)
@@ -232,7 +232,7 @@ def retire_rate(session: Session, service_type: str, now: datetime) -> Housekeep
     ) or 0
     if open_bookings:
         uses = "booking uses" if open_bookings == 1 else "bookings use"
-        raise Conflict(f"{open_bookings} open {uses} this service — close them first")
+        raise Conflict(f"{open_bookings} open {uses} this service. Close them first.")
 
     rate.retired_at = now
     return rate
@@ -302,9 +302,9 @@ def retire_staff(session: Session, staff_id: str, now: datetime) -> Staff:
     ) or 0
     if held:
         raise Conflict(
-            "1 open request is still assigned — reassign it first"
+            "1 open request is still assigned. Reassign it first."
             if held == 1
-            else f"{held} open requests are still assigned — reassign them first"
+            else f"{held} open requests are still assigned. Reassign them first."
         )
     member.retired_at = now
     return member
